@@ -459,7 +459,7 @@ if (!$error) {
     if(count($result[1])){
 ?>
 
-    <table id="storeOrders" class="table table-secondary">
+    <table id="storeOrders" class="table table-warning">
       <thead>
         <tr>
           <th scope="col">کد سفارش</th>
@@ -484,8 +484,8 @@ if (!$error) {
               echo "<td style='color:red'>";
                 ?>
 
-                <button class="btn btn-default" style="background:green;color:white;">قبول</button>
-                <button class="btn btn-default" style="background:red;color:white;">رد</button>
+                <button class="btn btn-default" onclick="acceptOrder(<?php echo 962; ?>,this,event)" style="background:green;color:white;" data-orderId="<?php echo $value->order_id; ?>">قبول</button>
+                <button class="btn btn-default" onclick="rejectOrder(<?php echo 962; ?>,this,event)" style="background:red;color:white;"  data-orderId="<?php echo $value->order_id; ?>">رد</button>
 
                 <?php              
               echo "</td>";
@@ -496,6 +496,12 @@ if (!$error) {
               echo "<td style='color:green'>انجام شده</td>";
             }
               break;
+
+              case 'reject':{
+              
+                echo "<td style='color:red'>رد شد</td>";
+              }
+                break;
           }
           echo "</tr>";
         }
@@ -508,3 +514,67 @@ if (!$error) {
   echo "<h4 style='color:red'>خطا در  اینترنت شما.</h4>";
 }
 ?>
+
+<script>
+  //function accept
+function acceptOrder(user_id,button,event) {
+  var data = {
+                user_id: user_id,
+                order_id: button.getAttribute("data-orderid"),
+                typeAction: "accept"
+            }
+    // sent ajax request
+    jQuery.ajax({
+            url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+            method: "POST",
+            data:JSON.stringify(data),
+            dataType:"json",
+            contentType:"application/json",
+            success: function(data) {
+              if(data[0]=='ok'){
+                button.parentElement.style.color="green"
+                button.parentNode.innerHTML='انجام شده'
+              }else{
+                button.parentElement.style.color="blue"
+                button.parentNode.innerHTML='خطا در عملیات'
+              }
+            },
+            error: function(xhr) {
+              console.log('error', xhr);
+            }
+          })
+          
+        
+}
+
+//function reject
+function rejectOrder(user_id,button,event) {
+  var data = {
+                user_id: user_id,
+                order_id: button.getAttribute("data-orderid"),
+                typeAction: "reject"
+            }
+    // sent ajax request
+    jQuery.ajax({
+            url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+            method: "POST",
+            data:JSON.stringify(data),
+            dataType:"json",
+            contentType:"application/json",
+            success: function(data) {
+              if(data[0]=='ok'){
+                button.parentElement.style.color="red"
+                button.parentNode.innerHTML='رد شد'
+              }else{
+                button.parentElement.style.color="blue"
+                button.parentNode.innerHTML='خطا در عملیات'
+              }
+            },
+            error: function(xhr) {
+              console.log('error', xhr);
+            }
+          })
+          
+        
+}
+</script>
