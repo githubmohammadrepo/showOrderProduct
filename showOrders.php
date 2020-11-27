@@ -477,7 +477,7 @@ if (!$error) {
             echo "<th scope='row'>$value->order_id</th>";
             echo "<td>$value->order_product_name</td>";
             echo "<td>$value->order_product_quantity</td>";
-            echo "<td>".($value->order_product_quantity*$value->order_product_price)."</td>";
+            echo "<td>".($value->order_product_quantity*$value->order_product_price*$value->order_product_tax)."</td>";
           switch ($value->buy_status) {
             case 'undone':{
 
