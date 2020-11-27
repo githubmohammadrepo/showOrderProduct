@@ -66,10 +66,6 @@ class ChangeOrderStatus
     return $statusComplete;
   }
 
-
-
-
-
   /**
    * accept type
    * goal: reject one record that has this order_id and user_id"
@@ -97,8 +93,6 @@ class ChangeOrderStatus
     return $statusComplete;
   }
 
-
-  
 }
 
 //   using class
