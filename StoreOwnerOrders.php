@@ -28,7 +28,7 @@ class StoreOwnerOrders
         
         try {
             // run your code here
-            $sql = "SELECT `user_id` FROM pish_hikashop_user WHERE user_cms_id=$user_id LIMIT 1";
+            $this->row = $sql = "SELECT `id` FROM pish_phocamaps_marker_store WHERE user_id=$user_id LIMIT 1";
             
             $result = $this->conn->query($sql);
             if ($result) {
@@ -36,7 +36,7 @@ class StoreOwnerOrders
                 if ($rowcount > 0) {
                     
                     $row = $result->fetch_assoc();
-                    $this->hika_user_id = $row['user_id'];
+                    $this->hika_user_id = $row['id'];
                     $statusComplete = true;
 
                 } else {
@@ -72,7 +72,7 @@ class StoreOwnerOrders
 
                 . "ON pish_customer_vendor.order_id = pish_hikashop_order_product.order_id\n"
 
-                . "WHERE pish_customer_vendor.vendor_id = ".$this->hika_user_id."";
+                . "WHERE pish_customer_vendor.vendor_id = ".$this->hika_user_id." And WHERE pish_customer_vendor.archive  is null";
             
             $result = $this->conn->query($sql);
             if ($result) {
@@ -87,6 +87,7 @@ class StoreOwnerOrders
                     }
 
                     $this->storeOrders = $dev_array;
+                    $statusComplete = true;
 
                 } else {
                     $statusComplete = false;
@@ -107,6 +108,7 @@ class StoreOwnerOrders
 $json = file_get_contents('php://input');
 $post = json_decode($json, true);
 $user_id = $post['user_id'];
+
 if ($post && $user_id) {
 
     $object = new stdClass();
@@ -119,12 +121,13 @@ if ($post && $user_id) {
             $object->response = 'notok';
         }
     } else {
-        $object->response = 'notok';
+        $object->response = 'notokhika';
     }
     echo json_encode([$object, $store->storeOrders], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
 }else{
-    $object->response = 'notok';
+    $object->response = 'notokError';
     echo json_encode([$object, null], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
 }
+

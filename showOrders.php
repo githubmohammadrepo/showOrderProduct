@@ -803,17 +803,12 @@ if (!$error) {
     
                       echo "<td style='color:red'>";//4
                         ?>
-                      <button class="btn btn-default btn-success" onclick="acceptOrder(<?php echo 962; ?>,this,event)" data-orderId="<?php echo $value->order_id; ?>">پذیرفتن</button>
+                      <button class="btn btn-default btn-success" onclick="acceptAllOrder(<?php echo 962; ?>,this,event)" data-orderId="<?php echo $value->order_id; ?>">پذیرفتن</button>
                       
-                      <button class="btn btn-default btn-danger" onclick="rejectOrder(<?php echo 962; ?>,this,event)"   data-orderId="<?php echo $value->order_id; ?>">رد کردن</button>
-                      <?php echo "</td>"; ?>
-
-                      <?php echo "<td style='color:red'>"; //5 ?>
-                      <button class="btn btn-default btn-warning" onclick="rejectOrder(<?php echo 962; ?>,this,event)"  data-orderId="<?php echo $value->order_id; ?>">بایگانی کردن</button>
+                      <button class="btn btn-default btn-danger" onclick="rejectAllOrder(<?php echo 962; ?>,this,event)"   data-orderId="<?php echo $value->order_id; ?>">رد کردن</button>
                       <?php echo "</td>"; ?>
 
                       <?php
-                      echo "</td>";
                     }
                     break;
                   case 'done': {
@@ -828,6 +823,19 @@ if (!$error) {
                     }
                     break;
                 }
+
+                if($value->archive) {
+                  //hvae value 1
+                   echo "<td style='color:red'>"; //5
+                      echo 'بایگانی شد';
+                   echo "</td>"; 
+                  }else{
+                    //does not have value or have null value
+                  echo "<td style='color:red'>"; //5 ?>
+                  <button class="btn btn-default btn-warning" onclick="archiveOrder(<?php echo 962; ?>,this,event)"  data-orderId="<?php echo $value->order_id; ?>">بایگانی کردن</button>
+                  <?php echo "</td>"; 
+                }
+                
               echo '</tr>';
 
               // show header;
@@ -849,10 +857,10 @@ if (!$error) {
             switch ($value->buy_status) {
               case 'undone': {
 
-                  echo "<td style='color:red'>";
+                  echo "<td style='color:red' class='status".$value->order_id."'>";
                     ?>
 
-                  <button class="btn btn-default" onclick="acceptOrder(<?php echo 962; ?>,this,event)" style="background:green;color:white;" data-orderId="<?php echo $value->order_id; ?>">قبول</button>
+                  <button class="btn btn-default" onclick="acceptAllOrder(<?php echo 962; ?>,this,event)" style="background:green;color:white;" data-orderId="<?php echo $value->order_id; ?>">قبول</button>
                   <button class="btn btn-default" onclick="rejectOrder(<?php echo 962; ?>,this,event)" style="background:red;color:white;" data-orderId="<?php echo $value->order_id; ?>">رد</button>
 
                     <?php
@@ -885,12 +893,14 @@ if (!$error) {
 ?>
 
 <script defer>
-  //function accept
-  function acceptOrder(user_id, button, event) {
+  //accept all product in one order
+  function acceptAllOrder(user_id, button, event) {
+    let idNumber =  button.getAttribute("data-orderid").replace(/\D/g,'');
+    let tdsClassName = '.status'+idNumber;
     var data = {
       user_id: user_id,
       order_id: button.getAttribute("data-orderid"),
-      typeAction: "accept"
+      typeAction: "acceptAll"
     }
     // sent ajax request
     jQuery.ajax({
@@ -903,25 +913,51 @@ if (!$error) {
         if (data[0] == 'ok') {
           button.parentElement.style.color = "green"
           button.parentNode.innerHTML = 'انجام شده'
+
+          let tds  = document.querySelectorAll(tdsClassName.toString())
+          for(let i=0;i<tds.length;i++){
+            tds[i].innerHTML = 'انجام شده'
+            tds[i].style.color = 'white'
+          }
+          notificationDisplay(tdsClassName,'انجام شده','transparent','white')
         } else {
           button.parentElement.style.color = "blue"
           button.parentNode.innerHTML = 'خطا در عملیات'
+          notificationDisplay(tdsClassName,'خطا در عملیات','blue','white')
         }
       },
       error: function(xhr) {
         console.log('error', xhr);
+        button.parentNode.innerHTML = 'خطا در اینترنت'
+
+        notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
+        
       }
+        
     })
 
 
   }
 
-  //function reject
-  function rejectOrder(user_id, button, event) {
+  // notification display for change display and show notifcation for user
+  function notificationDisplay(className,textStatus,backgroundColor,color){
+    let tds  = document.querySelectorAll(className.toString())
+      for(let i=0;i<tds.length;i++){
+        tds[i].innerHTML = textStatus.toString()
+        tds[i].style.backgroundColor  = backgroundColor.toString()
+        tds[i].style.color = color.toString()
+      }
+  }
+
+  //reject all product in one order
+  function rejectAllOrder(user_id, button, event) {
+    let idNumber =  button.getAttribute("data-orderid").replace(/\D/g,'');
+    let tdsClassName = '.status'+idNumber;
+
     var data = {
       user_id: user_id,
       order_id: button.getAttribute("data-orderid"),
-      typeAction: "reject"
+      typeAction: "rejectAll"
     }
     // sent ajax request
     jQuery.ajax({
@@ -934,13 +970,57 @@ if (!$error) {
         if (data[0] == 'ok') {
           button.parentElement.style.color = "red"
           button.parentNode.innerHTML = 'رد شد'
+          notificationDisplay(tdsClassName,'رد شد','transparent','red')
         } else {
           button.parentElement.style.color = "blue"
           button.parentNode.innerHTML = 'خطا در عملیات'
+          notificationDisplay(tdsClassName,'خطا در عملیات','blue','white')
         }
       },
       error: function(xhr) {
         console.log('error', xhr);
+        button.parentNode.innerHTML = 'خطا در اینترنت'
+        notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
+      }
+    })
+
+
+  }
+  
+ //function archive all product in one order
+  function archiveOrder(user_id, button, event) {
+    let trClassName = ".order"+ ( button.getAttribute("data-orderid").toString())
+
+    var data = {
+      user_id: user_id,
+      order_id: button.getAttribute("data-orderid"),
+      typeAction: "archive"
+    }
+    console.log(data)
+    // sent ajax request
+    jQuery.ajax({
+      url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+      method: "POST",
+      data: JSON.stringify(data),
+      dataType: "json",
+      contentType: "application/json",
+      success: function(data) {
+        if (data[0] == 'ok') {
+          button.parentElement.style.color = "red"
+          button.parentNode.parentNode.remove();
+          // button.parentNode.innerHTML = 'بایگانی شد'
+          removeArchivedRow(trClassName);
+
+        } else {
+          button.parentElement.style.color = "blue"
+          button.parentNode.innerHTML = 'خطا در عملیات'
+          
+        }
+      },
+      error: function(xhr) {
+        console.log('error', xhr);
+        button.parentNode.innerHTML = 'خطا در اینترنت'
+        
       }
     })
 
@@ -975,4 +1055,11 @@ if (!$error) {
   }
 
 
+//remove rows that archived by click
+function removeArchivedRow(className){
+  let tds  = document.querySelectorAll(className.toString())
+      for(let i=0;i<tds.length;i++){
+        tds[i].remove();
+      }
+}
 </script>

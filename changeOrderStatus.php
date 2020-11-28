@@ -66,6 +66,33 @@ class ChangeOrderStatus
     return $statusComplete;
   }
 
+
+   /**
+   * accept type
+   * goal: reject all record that has this order_id to buy_satus to "archive"
+   */
+  public function setOrderStatusToArchive($user_id,$order_id)
+  {
+    $statusComplete = false;
+
+    try {
+      // run your code here
+      $sql = "UPDATE pish_customer_vendor set pish_customer_vendor.archive = '1' WHERE pish_customer_vendor.order_id =$order_id\n"
+
+    . " AND  pish_customer_vendor.vendor_id = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id)";
+      $result = $this->conn->query($sql);
+      if ($result) {
+        $statusComplete = true;
+        
+      } else {
+        $statusComplete = false;
+      }
+    } catch (exception $e) {
+      //code to handle the exception
+      return false;
+    }
+    return $statusComplete;
+  }
   /**
    * accept type
    * goal: reject one record that has this order_id and user_id"
@@ -108,7 +135,7 @@ if ($post && count($post) && $user_id && $order_id && $typeAction) {
 
   $object = new stdClass();
   $store = new ChangeOrderStatus($conn);
-  if($typeAction == 'accept'){
+  if($typeAction == 'acceptAll'){
     // set all record that have this order id to reject
     if ($store->setAllOrderStatusToReject($order_id)) {
       if ($store->setOrderStatusToAccept($user_id,$order_id)) {
@@ -120,8 +147,12 @@ if ($post && count($post) && $user_id && $order_id && $typeAction) {
       $object->response = 'notok';
     }
     
-  }else if($typeAction == 'reject'){
+  }else if($typeAction == 'rejectAll'){
     if($store->setOrderStatusToReject($user_id,$order_id)){
+      $object->response = 'ok';
+    }
+  }else if($typeAction == 'archive'){
+    if($store->setOrderStatusToArchive($user_id,$order_id)){
       $object->response = 'ok';
     }
   }else{
