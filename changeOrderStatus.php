@@ -120,6 +120,30 @@ class ChangeOrderStatus
     return $statusComplete;
   }
 
+  /**
+   * accept type
+   * goal: reject all record that has this order_id to buy_satus to "reject"
+   */
+  public function seOneOrderProductToAccept($order_id)
+  {
+    $statusComplete = false;
+    try {
+      // run your code here
+      $sql = "UPDATE `pish_customer_vendor` SET `buy_status` ='reject' WHERE order_id = $order_id";
+      $result = $this->conn->query($sql);
+      if ($result) {
+        $statusComplete = true;
+        
+      } else {
+        $statusComplete = false;
+      }
+    } catch (exception $e) {
+      //code to handle the exception
+      return false;
+    }
+    return $statusComplete;
+  }
+
 }
 
 //   using class

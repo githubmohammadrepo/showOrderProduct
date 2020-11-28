@@ -1062,4 +1062,52 @@ function removeArchivedRow(className){
         tds[i].remove();
       }
 }
+
+//change or set one order_product to accept
+function acceptOneOrder(user_id, button, event) {
+    let idNumber =  button.getAttribute("data-orderid").replace(/\D/g,'');
+    let tdsClassName = '.status'+idNumber;
+    var data = {
+      user_id: user_id,
+      order_id: button.getAttribute("data-orderid"),
+      typeAction: "acceptAll"
+    }
+    // sent ajax request
+    jQuery.ajax({
+      url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+      method: "POST",
+      data: JSON.stringify(data),
+      dataType: "json",
+      contentType: "application/json",
+      success: function(data) {
+        if (data[0] == 'ok') {
+          button.parentElement.style.color = "green"
+          button.parentNode.innerHTML = 'انجام شده'
+
+          let tds  = document.querySelectorAll(tdsClassName.toString())
+          for(let i=0;i<tds.length;i++){
+            tds[i].innerHTML = 'انجام شده'
+            tds[i].style.color = 'white'
+          }
+          notificationDisplay(tdsClassName,'انجام شده','transparent','white')
+        } else {
+          button.parentElement.style.color = "blue"
+          button.parentNode.innerHTML = 'خطا در عملیات'
+          notificationDisplay(tdsClassName,'خطا در عملیات','blue','white')
+        }
+      },
+      error: function(xhr) {
+        console.log('error', xhr);
+        button.parentNode.innerHTML = 'خطا در اینترنت'
+
+        notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
+        
+      }
+        
+    })
+
+
+  }
+
+
 </script>
