@@ -122,14 +122,27 @@ class ChangeOrderStatus
 
   /**
    * accept type
-   * goal: reject all record that has this order_id to buy_satus to "reject"
+   * goal: set one order product to accept.
    */
-  public function seOneOrderProductToAccept($order_id)
+  public function seOneOrderProductToAccept($order_product_id,$user_id)
   {
     $statusComplete = false;
     try {
       // run your code here
-      $sql = "UPDATE `pish_customer_vendor` SET `buy_status` ='reject' WHERE order_id = $order_id";
+      $sql = "UPDATE `pish_hikashop_order_product` SET \n"
+
+    . "pish_hikashop_order_product.vendor_id_accepted = (\n"
+
+    . "	SELECT id FROM pish_phocamaps_marker_store\n"
+
+    . "    WHERE pish_phocamaps_marker_store.user_id = $user_id\n"
+
+    . ")\n"
+
+    . "\n"
+
+    . "WHERE pish_hikashop_order_product.order_product_id = $order_product_id";
+
       $result = $this->conn->query($sql);
       if ($result) {
         $statusComplete = true;
@@ -155,33 +168,49 @@ $user_id = $post['user_id'];
 $order_id = $post['order_id'];
 $typeAction = $post['typeAction'];//is "accept" or "reject"
 
-if ($post && count($post) && $user_id && $order_id && $typeAction) {
+if ($post && count($post) && $user_id && $typeAction) {
 
   $object = new stdClass();
   $store = new ChangeOrderStatus($conn);
-  if($typeAction == 'acceptAll'){
-    // set all record that have this order id to reject
-    if ($store->setAllOrderStatusToReject($order_id)) {
-      if ($store->setOrderStatusToAccept($user_id,$order_id)) {
-        $object->response = 'ok';
+  if($order_id){
+    if($typeAction == 'acceptAll'){
+      // set all record that have this order id to reject
+      if ($store->setAllOrderStatusToReject($order_id)) {
+        if ($store->setOrderStatusToAccept($user_id,$order_id)) {
+          $object->response = 'ok';
+        } else {
+          $object->response = 'notok';
+        }
       } else {
         $object->response = 'notok';
       }
-    } else {
+      
+    }else if($typeAction == 'rejectAll'){
+      if($store->setOrderStatusToReject($user_id,$order_id)){
+        $object->response = 'ok';
+      }
+    }else if($typeAction == 'archive'){
+      if($store->setOrderStatusToArchive($user_id,$order_id)){
+        $object->response = 'ok';
+      }
+    }else{
       $object->response = 'notok';
     }
-    
-  }else if($typeAction == 'rejectAll'){
-    if($store->setOrderStatusToReject($user_id,$order_id)){
-      $object->response = 'ok';
-    }
-  }else if($typeAction == 'archive'){
-    if($store->setOrderStatusToArchive($user_id,$order_id)){
-      $object->response = 'ok';
-    }
+
   }else{
-    $object->response = 'notok';
+    //order_id is not set
+    if($typeAction=='acceptOne'){
+      if($store->seOneOrderProductToAccept($order_product_id,$user_id)){
+
+      }else{
+        
+      }
+    }else{
+      $object->response = 'notok';
+    }
   }
+
+
 }else {
   $object->response = 'notok post';
 }
