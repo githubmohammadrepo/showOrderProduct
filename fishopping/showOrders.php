@@ -850,7 +850,7 @@ function getStoreOrders($user_id, &$error)
   $error = false;
   //sent message to stores
   //get all sessionIds belongs to vendor own user_id
-  $url = 'http://hypertester.ir/serverHypernetShowUnion/StoreOwnerOrders.php';
+  $url = 'http://fishopping.ir/serverHypernetShowUnion/StoreOwnerOrders.php';
   // start get card info
   $ch = curl_init();
   curl_setopt($ch, CURLOPT_URL, $url);
@@ -1010,15 +1010,18 @@ if (!$error) {
       order_id: button.getAttribute("data-orderid"),
       typeAction: "acceptAll"
     }
-    console.log(data)
     // sent ajax request
     jQuery.ajax({
-      url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+      url: "http://fishopping.ir/serverHypernetShowUnion/changeOrderStatus.php",
       method: "POST",
       data: JSON.stringify(data),
       dataType: "json",
       contentType: "application/json",
       success: function(data) {
+        console.log('start data acceptAll')
+        console.log(data)
+        console.log('end data acceptAll')
+
         if (data[0].response == 'ok') {
           button.parentElement.style.color = "green"
           button.parentNode.innerHTML = 'انجام شده'
@@ -1027,7 +1030,6 @@ if (!$error) {
           notificationDisplay(tdsClassName, 'انجام شده', 'transparent', 'white')
 
           //send sms to customer
-          console.log(data)
           smsentSmsToCustomers(data);
         } else if (data[0] == 'other') {
           button.parentNode.innerHTML = 'رد شد'
@@ -1055,10 +1057,10 @@ if (!$error) {
 
 
   function smsentSmsToCustomers(data){
-    let jsonLiveSite = "http://hypertester.ir/index.php?option=com_jchat&format=json";
+    let jsonLiveSite = "http://fishopping.ir/index.php?option=com_jchat&format=json";
 
     postObject = {
-      "message": "<?php echo 'خریدار گرامی خرید شما با موفقیت پذیرفته شد'; ?>",
+      "message":  'خریدر گرامی' + '<br>' + 'خرید شما توسط ما پذیرفته شد' + '<br>' + 'چنانچه نیاز به توضیحات بیشتر هست از این طریق با ما در تماس باشید',
       "task": "stream.saveEntity",
       "to": data[0].customerSessonId.toString(), //error - solved => ownUser sessionId
       "tologged":  data[0].storeSessionId.toString() 
@@ -1091,7 +1093,7 @@ if (!$error) {
     }
     // sent ajax request
     jQuery.ajax({
-      url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+      url: "http://fishopping.ir/serverHypernetShowUnion/changeOrderStatus.php",
       method: "POST",
       data: JSON.stringify(data),
       dataType: "json",
@@ -1126,10 +1128,9 @@ if (!$error) {
       order_id: button.getAttribute("data-orderid"),
       typeAction: "archive"
     }
-    console.log(data)
     // sent ajax request
     jQuery.ajax({
-      url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+      url: "http://fishopping.ir/serverHypernetShowUnion/changeOrderStatus.php",
       method: "POST",
       data: JSON.stringify(data),
       dataType: "json",
@@ -1169,7 +1170,6 @@ if (!$error) {
     }
     let className = '.' + element.id.toString();
     let trs = document.querySelectorAll(className)
-    console.log(trs)
     for (let i = 0; i < trs.length; i++) {
       if (trs[i].classList.contains('none')) {
         trs[i].classList.remove('none')
@@ -1203,10 +1203,9 @@ if (!$error) {
       order_product_id: order_product_id,
       typeAction: "acceptOne"
     }
-    console.log(data)
     // sent ajax request
     jQuery.ajax({
-      url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+      url: "http://fishopping.ir/serverHypernetShowUnion/changeOrderStatus.php",
       method: "POST",
       data: JSON.stringify(data),
       dataType: "json",
