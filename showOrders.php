@@ -1,4 +1,100 @@
 <style>
+  /* start alert bootstrap styles */
+  .alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+  }
+
+  .alert h4 {
+    margin-top: 0;
+    color: inherit;
+  }
+
+  .alert .alert-link {
+    font-weight: bold;
+  }
+
+  .alert>p,
+  .alert>ul {
+    margin-bottom: 0;
+  }
+
+  .alert>p+p {
+    margin-top: 5px;
+  }
+
+  .alert-dismissable,
+  .alert-dismissible {
+    padding-right: 35px;
+  }
+
+  .alert-dismissable .close,
+  .alert-dismissible .close {
+    position: relative;
+    top: -2px;
+    right: -21px;
+    color: inherit;
+  }
+
+  .alert-success {
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+    color: #3c763d;
+  }
+
+  .alert-success hr {
+    border-top-color: #c9e2b3;
+  }
+
+  .alert-success .alert-link {
+    color: #2b542c;
+  }
+
+  .alert-info {
+    background-color: #d9edf7;
+    border-color: #bce8f1;
+    color: #31708f;
+  }
+
+  .alert-info hr {
+    border-top-color: #a6e1ec;
+  }
+
+  .alert-info .alert-link {
+    color: #245269;
+  }
+
+  .alert-warning {
+    background-color: #fcf8e3;
+    border-color: #faebcc;
+    color: #8a6d3b;
+  }
+
+  .alert-warning hr {
+    border-top-color: #f7e1b5;
+  }
+
+  .alert-warning .alert-link {
+    color: #66512c;
+  }
+
+  .alert-danger {
+    background-color: #f2dede;
+    border-color: #ebccd1;
+    color: #a94442;
+  }
+
+  .alert-danger hr {
+    border-top-color: #e4b9c0;
+  }
+
+  .alert-danger .alert-link {
+    color: #843534;
+  }
+
+  /* end alert bootstrap styles */
   /* start bootstrap list group styles css */
 
   .list-group {
@@ -380,12 +476,12 @@
   }
 
   .table-hover .table-warning:hover {
-    background-color: #ffe8a1;
+    background-color: #00ff80 !important;
   }
 
   .table-hover .table-warning:hover>td,
   .table-hover .table-warning:hover>th {
-    background-color: #ffe8a1;
+    background-color: #00ff80 !important;
   }
 
   .table-danger,
@@ -649,60 +745,67 @@
   }
 
   /* mystyles for beautify webpage */
-  caption { 
-    caption-side:top;
-    margin:auto;
-    text-align:center;
-    background-color:aquamarine;
+  caption {
+    caption-side: top;
+    margin: auto;
+    text-align: center;
+    background-color: aquamarine;
     color: black;
-    font-weight:bold;
-    font-size:.1.2rem;
-  }
-  .btn-warning{
-    background-color:orange;
-    color:maroon;
-  }
-  .btn-dange{
-    background-color:red;
-    color:white;
-  }
-  .btn-success{
-    background-color:green;
-    color:white;
-  }
-  .btn-danger{
-    background-color: red;
-    color:white;
+    font-weight: bold;
+    font-size: .1.2rem;
   }
 
-  table thead tr{
+  .btn-warning {
+    background-color: orange;
+    color: maroon;
+  }
+
+  .btn-dange {
+    background-color: red;
+    color: white;
+  }
+
+  .btn-success {
+    background-color: green;
+    color: white;
+  }
+
+  .btn-danger {
+    background-color: red;
+    color: white;
+  }
+
+  table thead tr {
     background-color: #81A7E3 !important;
-    color:black;
+    color: black;
   }
-  table tbody tr.transition{
-    background-color:#4682B4;
-    color:white;
+
+  table tbody tr.transition {
+    background-color: #4682B4;
+    color: white;
   }
-  
-  .activeTr{
-    background-color:darkturquoise;
+
+  .activeTr {
+    background-color: darkturquoise;
   }
 
   /* styles for toggle rows */
-  
-  .none{
-    opacity:0;
-    display:none;
+
+  .none {
+    opacity: 0;
+    display: none;
   }
-  .display{
-    opacity:1
-    display:block;
+
+  .display {
+    opacity: 1 display:block;
 
   }
-  .w-100{
-    width:100%;
+
+  .w-100 {
+    width: 100%;
   }
-  .orderHeader{
+
+  .orderHeader {
     font-size: 14px;
     padding: 4px 10px;
     margin-bottom: 0;
@@ -721,6 +824,20 @@
     background-image: none;
     border: 1px solid transparent;
     border-radius: 8px;
+  }
+
+  /* styles for alert */
+  .text-center{
+    text-align: center;
+  }
+  .close-alert{
+    position:absolute !important;
+    right:5px;
+    display: inline;
+    top:6px;
+  }
+  .blue{
+    color:blue;
   }
 </style>
 <?php
@@ -765,18 +882,21 @@ if (!$error) {
 
     if (count($result[1])) {
 ?>
-
+      <div class="alert none nofication alert-danger blue text-center" role="alert">
+        <p>سفارش مورد نظر شما قبلا توسط فروشگاه دیگر پذیرفته شده است.</p>
+        <span class="close-alert btn btn-danger" onclick="removeAlert(this)">X</span>
+      </div>
       <table id="storeOrders" class="table table-warning table-bordered table-hover">
         <!-- table caption -->
         <caption>جدول سفارشات مشتری</caption>
         <thead>
-           <tr>
-             <th scope="col">شماره سفارش</th>
-             <th scope="col">نام محصول</th>
-             <th scope="col">تعداد محصول</th>
-             <th scope="col">عملیات سفارش</th>
-             <th scope="col">بایگانی</th>
-           </tr>
+          <tr>
+            <th scope="col">شماره سفارش</th>
+            <th scope="col">نام محصول</th>
+            <th scope="col">تعداد محصول</th>
+            <th scope="col">عملیات سفارش</th>
+            <th scope="col">بایگانی</th>
+          </tr>
         </thead>
         <tbody>
 
@@ -784,100 +904,88 @@ if (!$error) {
           $status = -1;
           foreach ($result[1] as $key => $value) {
 
-            if ($status != $value->order_id){
-              if($status != -1){
-                ?>
-                  <tr class="list-group-item-light">
-                    <td colspan="5"></td>
-                  </tr>
+            if ($status != $value->order_id) {
+              if ($status != -1) {
+          ?>
+                <tr class="list-group-item-light">
+                  <td colspan="5"></td>
+                </tr>
                 <?php
               }
               $status = $value->order_id;
-              echo '<tr id="order'.$value->order_id.'" class="orderHeader" onClick="toggleRowInfos(this,event)">';
-                echo '<td> '.($key+1).'</td>';//1
-                echo '<td> '.$status.' key: '.$key.'</td>';//2
-                echo '<td> '.$status.' key: '.$key.'</td>';//3
-                
-                switch ($value->buy_status) {
-                  case 'undone': {
-    
-                      echo "<td style='color:red'>";//4
-                        ?>
-                      <button class="btn btn-default btn-success" onclick="acceptAllOrder(<?php echo 962; ?>,this,event)" data-orderId="<?php echo $value->order_id; ?>">پذیرفتن</button>
-                      
-                      <button class="btn btn-default btn-danger" onclick="rejectAllOrder(<?php echo 962; ?>,this,event)"   data-orderId="<?php echo $value->order_id; ?>">رد کردن</button>
-                      <?php echo "</td>"; ?>
+              echo '<tr id="order' . $value->order_id . '" class="orderHeader" onClick="toggleRowInfos(this,event)">';
+              echo '<td> ' . ($key + 1) . '</td>'; //1
+              echo '<td> ' . $status . ' key: ' . $key . '</td>'; //2
+              echo '<td> ' . $status . ' key: ' . $key . '</td>'; //3
 
-                      <?php
-                    }
-                    break;
-                  case 'done': {
-    
-                      echo "<td style='color:green'>انجام شده</td>";
-                    }
-                    break;
-    
-                  case 'reject': {
-    
-                      echo "<td style='color:red'>رد شد</td>";
-                    }
-                    break;
-                }
+              switch ($value->buy_status) {
+                case 'undone': {
 
-                if($value->archive) {
-                  //hvae value 1
-                   echo "<td style='color:red'>"; //5
-                      echo 'بایگانی شد';
-                   echo "</td>"; 
-                  }else{
-                    //does not have value or have null value
-                  echo "<td style='color:red'>"; //5 ?>
-                  <button class="btn btn-default btn-warning" onclick="archiveOrder(<?php echo 962; ?>,this,event)"  data-orderId="<?php echo $value->order_id; ?>">بایگانی کردن</button>
-                  <?php echo "</td>"; 
-                }
-                
+                    echo "<td style='color:red' id='statusField" . $value->order_id . "'>"; //4
+                ?>
+                    <button class="btn btn-default btn-success" onclick="acceptAllOrder(<?php echo $user_id; ?>,this,event)" data-orderId="<?php echo $value->order_id; ?>">پذیرفتن</button>
+
+                    <button class="btn btn-default btn-danger" onclick="rejectAllOrder(<?php echo $user_id; ?>,this,event)" data-orderId="<?php echo $value->order_id; ?>">رد کردن</button>
+                    <?php echo "</td>"; ?>
+
+                <?php
+                  }
+                  break;
+                case 'done': {
+
+                    echo "<td style='color:green'>انجام شده</td>";
+                  }
+                  break;
+
+                case 'reject': {
+
+                    echo "<td style='color:red'>رد شد</td>";
+                  }
+                  break;
+              }
+
+              if ($value->archive) {
+                //hvae value 1
+                echo "<td style='color:red'>"; //5
+                echo 'بایگانی شد';
+                echo "</td>";
+              } else {
+                //does not have value or have null value
+                echo "<td style='color:red'>"; //5 
+                ?>
+                <button class="btn btn-default btn-warning" onclick="archiveOrder(<?php echo $user_id; ?>,this,event)" data-orderId="<?php echo $value->order_id; ?>">بایگانی کردن</button>
+              <?php echo "</td>";
+              }
+
               echo '</tr>';
 
               // show header;
-            echo "<tr  class='order".$value->order_id." none transition'>";
+              echo "<tr  class='order" . $value->order_id . " none transition'>";
               echo '<th scope="col">کد سفارش</th>';
               echo '<th scope="col">نام محصول</th>';
               echo '<th scope="col">تعداد محصول</th>';
               echo '<th scope="col">قیمت محصول</th>';
               echo '<th scope="col">وضعیت سفارش</th>';
-            echo '</tr>';
-          
+              echo '</tr>';
             }
 
-            echo "<tr class='order".$value->order_id." none transition'>";
+            echo "<tr class='order" . $value->order_id . " none transition'>";
             echo "<th scope='row'>$value->order_id</th>";
             echo "<td>$value->order_product_name</td>";
             echo "<td>$value->order_product_quantity</td>";
             echo "<td>" . ($value->order_product_quantity * $value->order_product_price * $value->order_product_tax) . "</td>";
-            switch ($value->buy_status) {
-              case 'undone': {
 
-                  echo "<td style='color:red' class='status".$value->order_id."'>";
-                    ?>
+            if ($value->vendor_id_accepted == null) {
 
-                  <button class="btn btn-default" onclick="acceptAllOrder(<?php echo 962; ?>,this,event)" style="background:green;color:white;" data-orderId="<?php echo $value->order_id; ?>">قبول</button>
-                  <button class="btn btn-default" onclick="rejectOrder(<?php echo 962; ?>,this,event)" style="background:red;color:white;" data-orderId="<?php echo $value->order_id; ?>">رد</button>
 
-                    <?php
-                  echo "</td>";
-                }
-                break;
-              case 'done': {
-
-                  echo "<td style='color:green'>انجام شده</td>";
-                }
-                break;
-
-              case 'reject': {
-
-                  echo "<td style='color:red'>رد شد</td>";
-                }
-                break;
+              echo "<td style='color:red' class='status" . $value->order_id . "'>";
+              ?>
+              <button class="btn btn-default" onclick="acceptOneOrder(<?php echo $user_id; ?>,this,event,<?php echo $value->order_product_id; ?>)" style="background:green;color:white;" data-orderId="<?php echo $value->order_id; ?>">قبول</button>
+              <!-- <button class="btn btn-default" onclick="rejectOrder(<?php echo $user_id; ?>,this,event)" style="background:red;color:white;" data-orderId="<?php echo $value->order_id; ?>">رد</button> -->
+          <?php
+              echo "</td>";
+            } else { //end if order_product_id
+              echo "<td style='color:white'>انجام شده</td>";
             }
             echo "</tr>";
           }
@@ -895,13 +1003,14 @@ if (!$error) {
 <script defer>
   //accept all product in one order
   function acceptAllOrder(user_id, button, event) {
-    let idNumber =  button.getAttribute("data-orderid").replace(/\D/g,'');
-    let tdsClassName = '.status'+idNumber;
+    let idNumber = button.getAttribute("data-orderid").replace(/\D/g, '');
+    let tdsClassName = '.status' + idNumber;
     var data = {
       user_id: user_id,
       order_id: button.getAttribute("data-orderid"),
       typeAction: "acceptAll"
     }
+    console.log(data)
     // sent ajax request
     jQuery.ajax({
       url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
@@ -914,45 +1023,50 @@ if (!$error) {
           button.parentElement.style.color = "green"
           button.parentNode.innerHTML = 'انجام شده'
 
-          let tds  = document.querySelectorAll(tdsClassName.toString())
-          for(let i=0;i<tds.length;i++){
-            tds[i].innerHTML = 'انجام شده'
-            tds[i].style.color = 'white'
-          }
-          notificationDisplay(tdsClassName,'انجام شده','transparent','white')
+          let tds = document.querySelectorAll(tdsClassName.toString())
+          // for (let i = 0; i < tds.length; i++) {
+          //   tds[i].innerHTML = 'انجام شده'
+          //   tds[i].style.color = 'white'
+          // }
+          notificationDisplay(tdsClassName, 'انجام شده', 'transparent', 'white')
+        } else if (data[0] == 'other') {
+          button.parentNode.innerHTML = 'رد شد'
+          let noficationElement = document.querySelector('.close-alert');
+          removeAlert(noficationElement);
+          notificationDisplay(tdsClassName, 'رد شده', 'transparent', 'red')
         } else {
           button.parentElement.style.color = "blue"
           button.parentNode.innerHTML = 'خطا در عملیات'
-          notificationDisplay(tdsClassName,'خطا در عملیات','blue','white')
+          notificationDisplay(tdsClassName, 'خطا در عملیات', 'blue', 'white')
         }
       },
       error: function(xhr) {
         console.log('error', xhr);
         button.parentNode.innerHTML = 'خطا در اینترنت'
 
-        notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
-        
+        notificationDisplay(tdsClassName, 'خطا در اینترنت', 'red', 'white')
+
       }
-        
+
     })
 
 
   }
 
   // notification display for change display and show notifcation for user
-  function notificationDisplay(className,textStatus,backgroundColor,color){
-    let tds  = document.querySelectorAll(className.toString())
-      for(let i=0;i<tds.length;i++){
-        tds[i].innerHTML = textStatus.toString()
-        tds[i].style.backgroundColor  = backgroundColor.toString()
-        tds[i].style.color = color.toString()
-      }
+  function notificationDisplay(className, textStatus, backgroundColor, color) {
+    let tds = document.querySelectorAll(className.toString())
+    for (let i = 0; i < tds.length; i++) {
+      tds[i].innerHTML = textStatus.toString()
+      tds[i].style.backgroundColor = backgroundColor.toString()
+      tds[i].style.color = color.toString()
+    }
   }
 
   //reject all product in one order
   function rejectAllOrder(user_id, button, event) {
-    let idNumber =  button.getAttribute("data-orderid").replace(/\D/g,'');
-    let tdsClassName = '.status'+idNumber;
+    let idNumber = button.getAttribute("data-orderid").replace(/\D/g, '');
+    let tdsClassName = '.status' + idNumber;
 
     var data = {
       user_id: user_id,
@@ -970,26 +1084,26 @@ if (!$error) {
         if (data[0] == 'ok') {
           button.parentElement.style.color = "red"
           button.parentNode.innerHTML = 'رد شد'
-          notificationDisplay(tdsClassName,'رد شد','transparent','red')
+          notificationDisplay(tdsClassName, 'رد شد', 'transparent', 'red')
         } else {
           button.parentElement.style.color = "blue"
           button.parentNode.innerHTML = 'خطا در عملیات'
-          notificationDisplay(tdsClassName,'خطا در عملیات','blue','white')
+          notificationDisplay(tdsClassName, 'خطا در عملیات', 'blue', 'white')
         }
       },
       error: function(xhr) {
         console.log('error', xhr);
         button.parentNode.innerHTML = 'خطا در اینترنت'
-        notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
+        notificationDisplay(tdsClassName, 'خطا در اینترنت', 'red', 'white')
       }
     })
 
 
   }
-  
- //function archive all product in one order
+
+  //function archive all product in one order
   function archiveOrder(user_id, button, event) {
-    let trClassName = ".order"+ ( button.getAttribute("data-orderid").toString())
+    let trClassName = ".order" + (button.getAttribute("data-orderid").toString())
 
     var data = {
       user_id: user_id,
@@ -1014,13 +1128,13 @@ if (!$error) {
         } else {
           button.parentElement.style.color = "blue"
           button.parentNode.innerHTML = 'خطا در عملیات'
-          
+
         }
       },
       error: function(xhr) {
         console.log('error', xhr);
         button.parentNode.innerHTML = 'خطا در اینترنت'
-        
+
       }
     })
 
@@ -1031,23 +1145,23 @@ if (!$error) {
   /**
    * functionality for toggle rows by clicking
    */
-  function toggleRowInfos(element,event){
-    if(element.classList.contains('activeTr')){
+  function toggleRowInfos(element, event) {
+    if (element.classList.contains('activeTr')) {
       element.classList.remove('activeTr')
-    }else{
+    } else {
       element.classList.add('activeTr')
     }
-    let className = '.'+element.id.toString();
+    let className = '.' + element.id.toString();
     let trs = document.querySelectorAll(className)
     console.log(trs)
-    for(let i=0; i<trs.length;i++){
-      if(trs[i].classList.contains('none')){
+    for (let i = 0; i < trs.length; i++) {
+      if (trs[i].classList.contains('none')) {
         trs[i].classList.remove('none')
         trs[i].classList.add('display')
-      }else if(trs[i].classList.contains('display')){
+      } else if (trs[i].classList.contains('display')) {
         trs[i].classList.remove('display')
         trs[i].classList.add('none')
-      }else{
+      } else {
         trs[i].classList.add('none')
       }
 
@@ -1055,23 +1169,25 @@ if (!$error) {
   }
 
 
-//remove rows that archived by click
-function removeArchivedRow(className){
-  let tds  = document.querySelectorAll(className.toString())
-      for(let i=0;i<tds.length;i++){
-        tds[i].remove();
-      }
-}
+  //remove rows that archived by click
+  function removeArchivedRow(className) {
+    let tds = document.querySelectorAll(className.toString())
+    for (let i = 0; i < tds.length; i++) {
+      tds[i].remove();
+    }
+  }
 
-//change or set one order_product to accept
-function acceptOneOrder(user_id, button, event) {
-    let idNumber =  button.getAttribute("data-orderid").replace(/\D/g,'');
-    let tdsClassName = '.status'+idNumber;
+  //change or set one order_product to accept
+  function acceptOneOrder(user_id, button, event, order_product_id) {
+    let idNumber = button.getAttribute("data-orderid").replace(/\D/g, '');
+    let tdsClassName = '.status' + idNumber;
     var data = {
       user_id: user_id,
       order_id: button.getAttribute("data-orderid"),
-      typeAction: "acceptAll"
+      order_product_id: order_product_id,
+      typeAction: "acceptOne"
     }
+    console.log(data)
     // sent ajax request
     jQuery.ajax({
       url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
@@ -1080,34 +1196,52 @@ function acceptOneOrder(user_id, button, event) {
       dataType: "json",
       contentType: "application/json",
       success: function(data) {
-        if (data[0] == 'ok') {
+        if (data[0] == 'owned') {
           button.parentElement.style.color = "green"
           button.parentNode.innerHTML = 'انجام شده'
-
-          let tds  = document.querySelectorAll(tdsClassName.toString())
-          for(let i=0;i<tds.length;i++){
-            tds[i].innerHTML = 'انجام شده'
-            tds[i].style.color = 'white'
-          }
-          notificationDisplay(tdsClassName,'انجام شده','transparent','white')
-        } else {
+        } else if (data[0] == 'complete') {
+          button.parentElement.style.color = "green"
+          button.parentNode.innerHTML = 'انجام شده'
+          let btn = document.querySelector('#statusField'+button.getAttribute("data-orderid"));
+          btn.innerHTML = 'انجام شد'
+        } else if (data[0] == 'other') {
+             let noficationElement = document.querySelector('.close-alert');
+             removeAlert(noficationElement);
+             button.parentElement.style.color = 'red'
+             button.parentNode.innerHTML = 'بلاک شده'
+        } else { //e.g notok status error update
           button.parentElement.style.color = "blue"
           button.parentNode.innerHTML = 'خطا در عملیات'
-          notificationDisplay(tdsClassName,'خطا در عملیات','blue','white')
+          notificationDisplay(tdsClassName, 'خطا در عملیات', 'blue', 'white')
         }
       },
       error: function(xhr) {
         console.log('error', xhr);
         button.parentNode.innerHTML = 'خطا در اینترنت'
 
-        notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
-        
-      }
-        
-    })
+        // notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
 
+      }
+
+    })
 
   }
 
 
+  /**
+   * remove alert notification
+   */
+  function removeAlert(element){
+    element = element.parentElement;
+    if(element.classList.contains('display')){
+      element.classList.remove('display')
+      element.classList.add('none')
+    }else{
+      element.classList.add('display')
+      element.classList.remove('none')
+    }
+  }
+
+
+  
 </script>
