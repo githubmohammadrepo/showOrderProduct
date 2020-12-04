@@ -26,6 +26,8 @@ class ChangeOrderStatus
   public $singleAcceptAffecerRows = 0;
   public $allOrderAccepted = false;
   private $customerSessionId;
+  private $storeOwnerSessionId=Array();
+
   public function __construct($conn,$JFactory_getSession)
   {
     $this->conn = $conn;
@@ -107,6 +109,53 @@ class ChangeOrderStatus
       }
 
     }
+    return $statusComplete;
+  }
+  
+  /**
+   * accept type
+   * goal: acceptAll order that order_product was doned
+   */
+  public function setOrdersBelogsToProductTOAccept($user_id, $order_id)
+  {
+    $statusComplete = false;  
+      /* Start transaction */
+      mysqli_begin_transaction($this->conn);
+      try {
+        if($this->setAllOrderStatusToReject($order_id)){
+        // run your code here
+          $sql = "UPDATE pish_customer_vendor SET pish_customer_vendor.buy_status = 'done' WHERE pish_customer_vendor.vendor_id IN (SELECT pish_hikashop_order_product.vendor_id_accepted FROM `pish_hikashop_order_product` WHERE pish_hikashop_order_product.order_id =$order_id GROUP BY pish_hikashop_order_product.vendor_id_accepted)";
+          $result = $this->conn->query($sql);
+          if ($result) {
+            $count = $this->conn->affected_rows;
+            if ($count > 0) {
+              
+              // start second update
+               $sql = "UPDATE pish_customer_vendor SET buy_status = 'reject' WHERE buy_status = 'undone' AND order_id = $order_id";
+              $result = $this->conn->query($sql);
+              if ($result) {
+                // $count = $this->conn->affected_rows;
+                   /* If code reaches this point without errors then commit the data in the database */
+                  mysqli_commit($this->conn);
+                  
+                  $statusComplete = true;
+              
+                // end second update
+              } else {
+                $statusComplete = false;
+            }
+          } else {
+            $statusComplete = false;
+          }
+        } else {
+          $statusComplete = false;
+        }}
+      } catch (mysqli_sql_exception $exception) {
+        mysqli_rollback($this->conn);
+        //code to handle the exception
+        return false;
+      }
+
     return $statusComplete;
   }
 
@@ -202,7 +251,7 @@ class ChangeOrderStatus
     //if all record was accepted?
     if ($this->getIsAllOrderProductAccepted($order_id)) {
       //all order_procut was accepted
-      $statusComplete = false;
+      $statusComplete = 'other';
     } else {
       //all order_product does not accepted
       try {
@@ -236,9 +285,11 @@ class ChangeOrderStatus
       }
 
       //if all record was accepted?
+      $this->getIsAllOrderProductAccepted($order_id);
       if ($this->getIsAllOrderProductAccepted($order_id)) {
         //all order_procut was accepted
-        if ($this->setOrderStatusToAccept($user_id, $order_id)) {
+        $sac = $this->setOrdersBelogsToProductTOAccept($user_id, $order_id);
+        if ($sac) {
           $this->allOrderAccepted = true;
         } else {
           $this->allOrderAccepted = false;
@@ -332,22 +383,74 @@ class ChangeOrderStatus
     }
     return $statusComplete;
   }
+
+  /**
+   * get storeOwnerSessioonId
+   */
+  public function getStoreOwnerSessionId($order_id){
+    $statusComplete = false;
+    try {
+      // run your code here
+      $sql = "SELECT pish_session.session_id FROM pish_session WHERE pish_session.userid IN ( SELECT pish_phocamaps_marker_store.user_id FROM pish_phocamaps_marker_store WHERE id IN( SELECT pish_customer_vendor.vendor_id FROM pish_customer_vendor WHERE order_id = $order_id AND pish_customer_vendor.buy_status = 'done' ))";
+
+      $result = $this->conn->query($sql);
+
+      if ($result) {
+        if (mysqli_num_rows($result) > 0) {
+          // output data of each row
+          $this->storeOwnerSessionId = Array();
+          while ($row = mysqli_fetch_assoc($result)) {
+            $this->storeOwnerSessionId[] = $row;
+          }
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    } catch (exception $e) {
+      //code to handle the exception
+      return false;
+    }
+    return $statusComplete;
+  }
+
   //return result function accept one
-  public function acceptOneResult($typeAction, $store, &$object, $order_id, $order_product_id, $user_id)
+  public function acceptOneResult(&$arrayData,$typeAction, $store, &$object, $order_id, $order_product_id, $user_id)
   {
     if ($typeAction == 'acceptOne') {
-      if ($store->seOneOrderProductToAccept($order_id, $order_product_id, $user_id)) {
+      $AllOrderProductToAccept = $store->seOneOrderProductToAccept($order_id, $order_product_id, $user_id);
+      if ($AllOrderProductToAccept === true) {
         if ($store->singleAcceptAffecerRows > 0) {
-
           if ($store->allOrderAccepted) {
             $object->response = 'complete';
+            if($object->response == 'complete'){
+              $object=null;
+              $arrayData->response = 'ok';
+
+              if($this->getStoreOwnerSessionId($order_id)){
+                $arrayData->storeSessionId = $this->storeOwnerSessionId;
+              }else{
+                $arrayData->storeSessionId = $this->session->getId();
+              }
+              // set customerSessionId property to customer session id
+              if($this->getCustomerSessionId($order_id)){
+                $arrayData->customerSessonId = $this->customerSessionId;
+              }else{
+                $arrayData->customerSessonId = $this->customerSessionId;
+              }
+            }
           } else {
             $object->response = 'owned';
           }
         } else {
           $object->response = 'other';
         }
-      } else {
+      }else if($AllOrderProductToAccept == 'other'){
+        $object->response = 'other';
+      } 
+      else {
         $object->response = 'notok';
       }
     } else {
@@ -430,7 +533,7 @@ if ($post && count($post) && $user_id && $typeAction) {
       $store->archiveAllResult($typeAction, $store, $object, $order_id, $order_product_id, $user_id);
     } else if ($typeAction == 'acceptOne') {
       if ($order_product_id) {
-        $store->acceptOneResult($typeAction, $store, $object, $order_id, $order_product_id, $user_id);
+        $store->acceptOneResult($customeObject,$typeAction, $store, $object, $order_id, $order_product_id, $user_id);
       } else {
         $object->response = 'notok';
       }
