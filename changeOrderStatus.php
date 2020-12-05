@@ -5,11 +5,11 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 require_once("connection.php");
 
-define( '_JEXEC', 1 );
-define( 'JPATH_BASE', realpath(dirname(__FILE__).'/..' ));
+define('_JEXEC', 1);
+define('JPATH_BASE', realpath(dirname(__FILE__) . '/..'));
 
-require_once ( JPATH_BASE. '/includes/defines.php' );
-require_once ( JPATH_BASE. '/includes/framework.php' );
+require_once(JPATH_BASE . '/includes/defines.php');
+require_once(JPATH_BASE . '/includes/framework.php');
 $mainframe = JFactory::getApplication('site');
 $mainframe->initialise();
 
@@ -26,9 +26,9 @@ class ChangeOrderStatus
   public $singleAcceptAffecerRows = 0;
   public $allOrderAccepted = false;
   private $customerSessionId;
-  private $storeOwnerSessionId=Array();
+  private $storeOwnerSessionId = array();
 
-  public function __construct($conn,$JFactory_getSession)
+  public function __construct($conn, $JFactory_getSession)
   {
     $this->conn = $conn;
     $this->session = $JFactory_getSession;
@@ -63,98 +63,103 @@ class ChangeOrderStatus
   public function setOrderStatusToAccept($user_id, $order_id)
   {
     $statusComplete = 'notok';
-    if($this->isRejectedOrderForMe($user_id,$order_id)){
+    if ($this->getIsAllOrderProductAccepted($order_id)) {
       return 'other';
-    }else{
-      /* Start transaction */
-      mysqli_begin_transaction($this->conn);
-      try {
-        if($this->setAllOrderStatusToReject($order_id)){
-        // run your code here
-          $sql = "UPDATE pish_customer_vendor set pish_customer_vendor.buy_status = 'done' WHERE pish_customer_vendor.order_id =$order_id\n"
+    } else {
+      if ($this->isRejectedOrderForMe($user_id, $order_id)) {
+        return 'other';
+      } else {
+        /* Start transaction */
+        mysqli_begin_transaction($this->conn);
+        try {
+          if ($this->setAllOrderStatusToReject($order_id)) {
+            // run your code here
+            $sql = "UPDATE pish_customer_vendor set pish_customer_vendor.buy_status = 'done' WHERE pish_customer_vendor.order_id =$order_id\n"
             . " AND  pish_customer_vendor.vendor_id = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id)";
-          $result = $this->conn->query($sql);
-          if ($result) {
-            $count = $this->conn->affected_rows;
-            if ($count > 0) {
-              // start second update
-              $sql = "UPDATE pish_hikashop_order_product set pish_hikashop_order_product.vendor_id_accepted = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id) WHERE pish_hikashop_order_product.order_id =$order_id\n";
-              $result = $this->conn->query($sql);
-              if ($result) {
-                $count = $this->conn->affected_rows;
-                if ($count > 0) {
-                   /* If code reaches this point without errors then commit the data in the database */
+            $result = $this->conn->query($sql);
+            if ($result) {
+              $count = $this->conn->affected_rows;
+              if ($count > 0) {
+                // start second update
+                $sql = "UPDATE pish_hikashop_order_product set pish_hikashop_order_product.vendor_id_accepted = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id) WHERE pish_hikashop_order_product.order_id =$order_id\n";
+                $result = $this->conn->query($sql);
+                if ($result) {
+                  $count = $this->conn->affected_rows;
+                  if ($count > 0) {
+                    /* If code reaches this point without errors then commit the data in the database */
                     mysqli_commit($this->conn);
 
-                    
+
                     $statusComplete = 'ok';
-                }else{
-                  mysqli_rollback($this->conn);
+                  } else {
+                    mysqli_rollback($this->conn);
+                    $statusComplete = 'notok';
+                  }
+                  // end second update
+                } else {
                   $statusComplete = 'notok';
                 }
-                // end second update
               } else {
                 $statusComplete = 'notok';
+              }
+            } else {
+              $statusComplete = 'notok';
             }
-          } else {
-            $statusComplete = 'notok';
           }
-        } else {
-          $statusComplete = 'notok';
-        }}
-      } catch (mysqli_sql_exception $exception) {
-        mysqli_rollback($this->conn);
-        //code to handle the exception
-        return 'notok';
+        } catch (mysqli_sql_exception $exception) {
+          mysqli_rollback($this->conn);
+          //code to handle the exception
+          return 'notok';
+        }
       }
-
     }
     return $statusComplete;
   }
-  
+
   /**
    * accept type
    * goal: acceptAll order that order_product was doned
    */
   public function setOrdersBelogsToProductTOAccept($user_id, $order_id)
   {
-    $statusComplete = false;  
-      /* Start transaction */
-      mysqli_begin_transaction($this->conn);
-      try {
-        if($this->setAllOrderStatusToReject($order_id)){
+    $statusComplete = false;
+    /* Start transaction */
+    mysqli_begin_transaction($this->conn);
+    try {
+      if ($this->setAllOrderStatusToReject($order_id)) {
         // run your code here
-          $sql = "UPDATE pish_customer_vendor SET pish_customer_vendor.buy_status = 'done' WHERE pish_customer_vendor.vendor_id IN (SELECT pish_hikashop_order_product.vendor_id_accepted FROM `pish_hikashop_order_product` WHERE pish_hikashop_order_product.order_id =$order_id GROUP BY pish_hikashop_order_product.vendor_id_accepted)";
-          $result = $this->conn->query($sql);
-          if ($result) {
-            $count = $this->conn->affected_rows;
-            if ($count > 0) {
-              
-              // start second update
-               $sql = "UPDATE pish_customer_vendor SET buy_status = 'reject' WHERE buy_status = 'undone' AND order_id = $order_id";
-              $result = $this->conn->query($sql);
-              if ($result) {
-                // $count = $this->conn->affected_rows;
-                   /* If code reaches this point without errors then commit the data in the database */
-                  mysqli_commit($this->conn);
-                  
-                  $statusComplete = true;
-              
-                // end second update
-              } else {
-                $statusComplete = false;
+        $sql = "UPDATE pish_customer_vendor SET pish_customer_vendor.buy_status = 'done' WHERE pish_customer_vendor.vendor_id IN (SELECT pish_hikashop_order_product.vendor_id_accepted FROM `pish_hikashop_order_product` WHERE pish_hikashop_order_product.order_id =$order_id GROUP BY pish_hikashop_order_product.vendor_id_accepted)";
+        $result = $this->conn->query($sql);
+        if ($result) {
+          $count = $this->conn->affected_rows;
+          if ($count > 0) {
+
+            // start second update
+            $sql = "UPDATE pish_customer_vendor SET buy_status = 'reject' WHERE buy_status = 'undone' AND order_id = $order_id";
+            $result = $this->conn->query($sql);
+            if ($result) {
+              // $count = $this->conn->affected_rows;
+              /* If code reaches this point without errors then commit the data in the database */
+              mysqli_commit($this->conn);
+
+              $statusComplete = true;
+
+              // end second update
+            } else {
+              $statusComplete = false;
             }
           } else {
             $statusComplete = false;
           }
         } else {
           $statusComplete = false;
-        }}
-      } catch (mysqli_sql_exception $exception) {
-        mysqli_rollback($this->conn);
-        //code to handle the exception
-        return false;
+        }
       }
+    } catch (mysqli_sql_exception $exception) {
+      mysqli_rollback($this->conn);
+      //code to handle the exception
+      return false;
+    }
 
     return $statusComplete;
   }
@@ -162,17 +167,18 @@ class ChangeOrderStatus
   /**
    * is rejected this order for this user
    */
-  public function isRejectedOrderForMe($user_id,$order_id){
-    $statusComplete=false;
+  public function isRejectedOrderForMe($user_id, $order_id)
+  {
+    $statusComplete = false;
     try {
       // run your code here
       $sql = "SELECT id FROM `pish_customer_vendor` WHERE buy_status = 'reject' and order_id = $order_id AND vendor_id = (\n"
 
-    . "SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id\n"
+        . "SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id\n"
 
-    . ")";
+        . ")";
       $result = $this->conn->query($sql);
-      if ($result->num_rows >0) {
+      if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         if (isset($row['id'])) {
           $statusComplete = true;
@@ -328,7 +334,7 @@ class ChangeOrderStatus
       if ($result) {
         // Associative array
         $row = $result->fetch_assoc();
-        $dataResult =($row['result']);
+        $dataResult = ($row['result']);
         if ($dataResult == 1) {
           return true;
         } else {
@@ -348,26 +354,27 @@ class ChangeOrderStatus
   /**
    * get customerSessioonId
    */
-  public function getCustomerSessionId($order_id){
+  public function getCustomerSessionId($order_id)
+  {
     $statusComplete = false;
     try {
       // run your code here
       $sql = "SELECT pish_session.session_id FROM `pish_session` \n"
 
-    . "WHERE userid = (SELECT pish_hikashop_user.user_cms_id FROM `pish_hikashop_user`\n"
+        . "WHERE userid = (SELECT pish_hikashop_user.user_cms_id FROM `pish_hikashop_user`\n"
 
-    . "WHERE pish_hikashop_user.user_id = (\n"
+        . "WHERE pish_hikashop_user.user_id = (\n"
 
-    . "SELECT pish_customer_vendor.customer_id FROM `pish_customer_vendor` WHERE pish_customer_vendor.order_id = $order_id LIMIT 1\n"
+        . "SELECT pish_customer_vendor.customer_id FROM `pish_customer_vendor` WHERE pish_customer_vendor.order_id = $order_id LIMIT 1\n"
 
-    . ") LIMIT 1) order by time desc limit 1";
+        . ") LIMIT 1) order by time desc limit 1";
 
       $result = $this->conn->query($sql);
       if ($result) {
         // Associative array
         $row = $result->fetch_assoc();
-        $dataResult =($row['session_id']);
-        $rowcount=mysqli_num_rows($result);
+        $dataResult = ($row['session_id']);
+        $rowcount = mysqli_num_rows($result);
         if ($rowcount && isset($dataResult)) {
           $this->customerSessionId = $dataResult;
           return true;
@@ -387,7 +394,8 @@ class ChangeOrderStatus
   /**
    * get storeOwnerSessioonId
    */
-  public function getStoreOwnerSessionId($order_id){
+  public function getStoreOwnerSessionId($order_id)
+  {
     $statusComplete = false;
     try {
       // run your code here
@@ -398,7 +406,7 @@ class ChangeOrderStatus
       if ($result) {
         if (mysqli_num_rows($result) > 0) {
           // output data of each row
-          $this->storeOwnerSessionId = Array();
+          $this->storeOwnerSessionId = array();
           while ($row = mysqli_fetch_assoc($result)) {
             $this->storeOwnerSessionId[] = $row;
           }
@@ -417,7 +425,7 @@ class ChangeOrderStatus
   }
 
   //return result function accept one
-  public function acceptOneResult(&$arrayData,$typeAction, $store, &$object, $order_id, $order_product_id, $user_id)
+  public function acceptOneResult(&$arrayData, $typeAction, $store, &$object, $order_id, $order_product_id, $user_id)
   {
     if ($typeAction == 'acceptOne') {
       $AllOrderProductToAccept = $store->seOneOrderProductToAccept($order_id, $order_product_id, $user_id);
@@ -425,19 +433,19 @@ class ChangeOrderStatus
         if ($store->singleAcceptAffecerRows > 0) {
           if ($store->allOrderAccepted) {
             $object->response = 'complete';
-            if($object->response == 'complete'){
-              $object=null;
+            if ($object->response == 'complete') {
+              $object = null;
               $arrayData->response = 'ok';
 
-              if($this->getStoreOwnerSessionId($order_id)){
+              if ($this->getStoreOwnerSessionId($order_id)) {
                 $arrayData->storeSessionId = $this->storeOwnerSessionId;
-              }else{
+              } else {
                 $arrayData->storeSessionId = $this->session->getId();
               }
               // set customerSessionId property to customer session id
-              if($this->getCustomerSessionId($order_id)){
+              if ($this->getCustomerSessionId($order_id)) {
                 $arrayData->customerSessonId = $this->customerSessionId;
-              }else{
+              } else {
                 $arrayData->customerSessonId = $this->customerSessionId;
               }
             }
@@ -447,10 +455,9 @@ class ChangeOrderStatus
         } else {
           $object->response = 'other';
         }
-      }else if($AllOrderProductToAccept == 'other'){
+      } else if ($AllOrderProductToAccept == 'other') {
         $object->response = 'other';
-      } 
-      else {
+      } else {
         $object->response = 'notok';
       }
     } else {
@@ -459,18 +466,18 @@ class ChangeOrderStatus
   }
 
   //return result function accept All
-  public function acceptAllResult(&$arrayData,$typeAction, $store, &$object, $order_id, $order_product_id, $user_id)
+  public function acceptAllResult(&$arrayData, $typeAction, $store, &$object, $order_id, $order_product_id, $user_id)
   {
     // set all record that have this order id to reject 
-    $object =null;
+    $object = null;
     $arrayData->response = $store->setOrderStatusToAccept($user_id, $order_id);
-    if($arrayData->response == 'ok'){
+    if ($arrayData->response == 'ok') {
 
       $arrayData->storeSessionId = $this->session->getId();
       // set customerSessionId property to customer session id
-      if($this->getCustomerSessionId($order_id)){
+      if ($this->getCustomerSessionId($order_id)) {
         $arrayData->customerSessonId = $this->customerSessionId;
-      }else{
+      } else {
         $arrayData->customerSessonId = $this->customerSessionId;
       }
     }
@@ -503,7 +510,7 @@ class ChangeOrderStatus
 }
 
 //global Array
-$arrayData = Array();
+$arrayData = array();
 //   using class
 $json = file_get_contents('php://input');
 $post = json_decode($json, true);
@@ -522,10 +529,10 @@ if (array_key_exists('order_product_id', $post)) {
 if ($post && count($post) && $user_id && $typeAction) {
 
   $object = new stdClass();
-  $store = new ChangeOrderStatus($conn,JFactory::getSession());
+  $store = new ChangeOrderStatus($conn, JFactory::getSession());
   if ($user_id && $order_id && $typeAction) {
     if ($typeAction == 'acceptAll') {
-      $store->acceptAllResult($customeObject,$typeAction, $store, $object, $order_id, $order_product_id, $user_id);
+      $store->acceptAllResult($customeObject, $typeAction, $store, $object, $order_id, $order_product_id, $user_id);
     } else if ($typeAction == 'rejectAll') {
 
       $store->rejectAllResult($typeAction, $store, $object, $order_id, $order_product_id, $user_id);
@@ -533,7 +540,7 @@ if ($post && count($post) && $user_id && $typeAction) {
       $store->archiveAllResult($typeAction, $store, $object, $order_id, $order_product_id, $user_id);
     } else if ($typeAction == 'acceptOne') {
       if ($order_product_id) {
-        $store->acceptOneResult($customeObject,$typeAction, $store, $object, $order_id, $order_product_id, $user_id);
+        $store->acceptOneResult($customeObject, $typeAction, $store, $object, $order_id, $order_product_id, $user_id);
       } else {
         $object->response = 'notok';
       }
@@ -548,17 +555,18 @@ if ($post && count($post) && $user_id && $typeAction) {
 }
 
 
-jsonEncodeOutput($object,$customeObject);
+jsonEncodeOutput($object, $customeObject);
 
 /**
  * customer jsonEncodedOutput
  */
-function jsonEncodeOutput($normalObject=null,$customeObject=null) {
-  if(isset($normalObject)){
+function jsonEncodeOutput($normalObject = null, $customeObject = null)
+{
+  if (isset($normalObject)) {
     echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-  }else if(isset($customeObject)){
+  } else if (isset($customeObject)) {
     echo json_encode([$customeObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-  }else{
+  } else {
     echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
   }
 }

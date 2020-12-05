@@ -884,7 +884,7 @@
   ?>
         <div class="alert none nofication alert-danger blue text-center" role="alert">
           <p id="alertText">سفارش مورد نظر شما قبلا توسط فروشگاه دیگر پذیرفته شده است.</p>
-          <span class="close-alert btn btn-danger" onclick="removeAlert(this)">X</span>
+          <span class="close-alert btn btn-danger" onclick="removeAlert(true,null)">X</span>
         </div>
         <table id="storeOrders" class="table table-warning table-bordered table-hover">
           <!-- table caption -->
@@ -984,8 +984,10 @@
                 <!-- <button class="btn btn-default" onclick="rejectOrder(<?php echo $user_id; ?>,this,event)" style="background:red;color:white;" data-orderId="<?php echo $value->order_id; ?>">رد</button> -->
             <?php
                 echo "</td>";
-              } else { //end if order_product_id
+              } elseif($value->vendor_id_accepted == $result[0]->store_vendor_id ) { //end if order_product_id
                 echo "<td style='color:white'>انجام شده</td>";
+              } else { //end if order_product_id
+                echo "<td style='color:red'> رد شد</td>";
               }
               echo "</tr>";
             }
@@ -1019,6 +1021,7 @@
         dataType: "json",
         contentType: "application/json",
         success: function(data) {
+          console.log(data)
           if (data[0].response == 'ok') {
             button.parentElement.style.color = "green"
             button.parentNode.innerHTML = 'انجام شده'
@@ -1029,10 +1032,11 @@
             //send sms to customer
             console.log(data)
             smsentSmsToCustomers(data);
-          } else if (data[0] == 'other') {
+          } else if (data[0].response == 'other') {
+            alert('other')
             button.parentNode.innerHTML = 'رد شد'
             
-            removeAlert();
+            removeAlert(false,null);
             notificationDisplay(tdsClassName, 'رد شده', 'transparent', 'red')
           } else {
             button.parentElement.style.color = "blue"
@@ -1227,30 +1231,29 @@
             
             if(data[0].customerSessonId ==null){
               //user is offline
-              removeAlert('کاربر مورد نظر شما انلاین نیست');
+              removeAlert(false,'کاربر مورد نظر شما انلاین نیست');
             }else{
               //user is online
               let copyData={};
               let q=0
               for(q=0;q<data[0].storeSessionId.length;q++){
-              alert(q)
               console.log(data[0].storeSessionId[q])
                 copyData.customerSessonId = data[0].customerSessonId;
                 copyData.storeSessionId = data[0].storeSessionId[q].session_id
                 
                 smsentSmsToCustomers([copyData]);
               }
+            }
             
             //end fire function accept all
             button.parentElement.style.color = "green"
             button.parentNode.innerHTML = 'انجام شده'
             let btn = document.querySelector('#statusField'+button.getAttribute("data-orderid"));
             btn.innerHTML = 'انجام شد'
-            }
             
           } else if (data[0] == 'other') {
               
-              removeAlert();
+              removeAlert(false,null);
               button.parentElement.style.color = 'red'
               button.parentNode.innerHTML = 'بلاک شده'
           } else { //e.g notok status error update
@@ -1275,22 +1278,23 @@
     /**
      * remove alert notification
      */
-    function removeAlert(text=null){
+    function removeAlert(isClicked=false,text=null){
       let textElement = document.querySelector('#alertText');
       if(text !=null){
         textElement.innerHTML =  text.toString()
       }else{
         textElement.innerHTML = 'سفارش مورد نظر شما قبلا توسط فروشگاه دیگر پذیرفته شده است.';
-
       }
       let element = document.querySelector('.close-alert');
       element = element.parentElement;
-      if(element.classList.contains('display')){
+      if(isClicked){
         element.classList.remove('display')
         element.classList.add('none')
       }else{
-        element.classList.add('display')
-        element.classList.remove('none')
+        if(element.classList.contains('display')==false){
+          element.classList.add('display')
+          element.classList.remove('none')
+        }
       }
     }
 

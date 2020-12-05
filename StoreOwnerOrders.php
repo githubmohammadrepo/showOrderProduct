@@ -5,7 +5,7 @@ $object = new stdClass();
 
 class StoreOwnerOrders
 {
-    private $hika_user_id;
+    public $store_vendor_id;
     private $conn;
     public $last_id;
     public $row;
@@ -36,7 +36,7 @@ class StoreOwnerOrders
                 if ($rowcount > 0) {
                     
                     $row = $result->fetch_assoc();
-                    $this->hika_user_id = $row['id'];
+                    $this->store_vendor_id = $row['id'];
                     $statusComplete = true;
 
                 } else {
@@ -72,7 +72,7 @@ class StoreOwnerOrders
 
                 . "ON pish_customer_vendor.order_id = pish_hikashop_order_product.order_id\n"
 
-                . "WHERE pish_customer_vendor.vendor_id = ".$this->hika_user_id." And WHERE pish_customer_vendor.archive  is null";
+                . "WHERE pish_customer_vendor.vendor_id = ".$this->store_vendor_id." And  pish_customer_vendor.archive is null";
             
             $result = $this->conn->query($sql);
             if ($result) {
@@ -117,6 +117,7 @@ if ($post && $user_id) {
     if ($store->getHikashopUserId($user_id)) {
         if ($store->getStoreOrders()) {
             $object->response = 'ok';
+            $object->store_vendor_id = $store->store_vendor_id;
         } else {
             $object->response = 'notok';
         }
