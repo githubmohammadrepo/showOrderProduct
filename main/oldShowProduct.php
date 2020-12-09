@@ -1,142 +1,11 @@
-    <style>
-      .btn:focus,
-      .btn:active:focus {
-        outline: thin dotted;
-        outline: 5px auto -webkit-focus-ring-color;
-        outline-offset: -2px;
-      }
-      .btn:hover,
-      .btn:focus {
-        color: #333;
-        text-decoration: none;
-      }
-      .btn:active {
-        background-image: none;
-        outline: 0;
-        -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
-        box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
-      }
-      /* default
-    ---------------------------- */
-      .btn-default {
-        color: #333;
-        background-color: #fff;
-        border-color: lightblue;
-      }
-      .btn-default:focus {
-        color: #333;
-        background-color: silver;
-        border-color: #8c8c8c;
-      }
-      .btn-default:hover {
-        color: #333;
-        background-color: sandybrown;
-        border-color: #adadad;
-      }
-      .btn-default:active {
-        color: #333;
-        background-color: silver;
-        border-color: lightseagreen;
-      }
-      /* mystyles for beautify webpage */
-      caption {
-        caption-side: top;
-        margin: auto;
-        text-align: center;
-        background-color: aquamarine;
-        color: black;
-        font-weight: bold;
-        font-size: .1.2rem;
-      }
-      .btn-warning {
-        background-color: orange;
-        color: maroon;
-      }
-      .btn-dange {
-        background-color: red;
-        color: white;
-      }
-      .btn-success {
-        background-color: green;
-        color: white;
-      }
-      .btn-danger {
-        background-color: red;
-        color: white;
-      }
-      table thead tr {
-        background-color: #81A7E3 !important;
-        color: black;
-      }
-      table tbody tr.transition {
-        background-color: #4682B4;
-        color: white;
-      }
-      .activeTr {
-        background-color: darkturquoise;
-      }
-      /* styles for toggle rows */
-      .none {
-        opacity: 0;
-        display: none;
-      }
-      .display {
-        opacity: 1 display:block;
-      }
-      .w-100 {
-        width: 100% !important;
-      }
-      .orderHeader {
-        font-size: 14px;
-        padding: 4px 10px;
-        margin-bottom: 0;
-        text-decoration: none;
-        text-align: center;
-        white-space: nowrap;
-        vertical-align: middle;
-        -ms-touch-action: manipulation;
-        touch-action: manipulation;
-        cursor: pointer;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        background-image: none;
-        border: 1px solid transparent;
-        border-radius: 8px;
-      }
-      .table {
-        font-size: 1.4rem !important;
-      }
-      /* styles for alert */
-      .text-center {
-        text-align: center;
-      }
-      .close-alert {
-        position: absolute !important;
-        right: 5px;
-        display: inline;
-        top: 6px;
-      }
-      .blue {
-        color: blue;
-      }
-      body {
-        text-align: center !important;
-      }
-      .modal-backdrop.show {
-        display: relative !important;
-        opacity: 1 !important;
-      }
-      #myModal {
-        margin-top: 80px;
-      }
-      .modal-body table tr {
-        display: table-row;
-      }
-      table#storeOrders tbody tr:hover {     background-color: teal !important;color:white; }
-      table#modalData tbody tr:hover {     background-color: teal !important;color:white; }
-    </style>
+<?php
+use Joomla\CMS\Factory;
+$document = Factory::getDocument();
+// above 2 lines are equivalent to the older form: $document = JFactory::getDocument();
+$document->addStyleSheet('http://hypertester.ir/templates/dataTable-jquery/manStyle.css'); 
+$document->addScript('http://hypertester.ir/templates/dataTable-jquery/mainScript.js');
+?>    
+
     <?php
     // step 1 => sent curl user_id ->cms_user_id
     $error;
@@ -281,7 +150,7 @@
     ?>
     <!-- start Modal -->
     <div id="myModal" class="modal" role="dialog" style="z-index: none;padding:none">
-      <div class="modal-dialog">
+      <div class="modal-dialog" style="width:75%">
         <!-- Modal content-->
         <div class="modal-content">
           <div class="modal-header">
@@ -289,13 +158,14 @@
             <h4 class="modal-title">لطفا محصول جایگزین را انتخاب بکنید</h4>
           </div>
           <div class="modal-body">
-            <table id="modalData" class="table table-striped table-active table-hover">
+            <table id="modalData" class="display table table-striped table-active table-hover" cellspacing="0" width="100%">
               <thead>
                 <tr>
                   <th scope="col">#</th>
                   <th scope="col">نام محصول</th>
                   <th scope="col">قیمت محصول</th>
                   <th scope="col">تعداد محصول</th>
+                  <th scope="col" id="modalDataAction" class="hide">عملیات</th>
                 </tr>
               </thead>
               <tbody>
@@ -319,7 +189,6 @@
           order_id: button.getAttribute("data-orderid"),
           typeAction: "acceptAll"
         }
-        console.log(data)
         // sent ajax request
         jQuery.ajax({
           url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
@@ -328,14 +197,12 @@
           dataType: "json",
           contentType: "application/json",
           success: function(data) {
-            console.log(data)
             if (data[0].response == 'ok') {
               button.parentElement.style.color = "green"
               button.parentNode.innerHTML = 'انجام شده'
               let tds = document.querySelectorAll(tdsClassName.toString())
               notificationDisplay(tdsClassName, 'انجام شده', 'transparent', 'white')
               //send sms to customer
-              console.log(data)
               smsentSmsToCustomers(data);
             } else if (data[0].response == 'other') {
               alert('other')
@@ -363,9 +230,7 @@
           "to": data[0].customerSessonId.toString(), //error - solved => ownUser sessionId
           "tologged": data[0].storeSessionId.toString()
         };
-        console.log(postObject)
         jQuery.post(jsonLiveSite, postObject, function(response) {
-          console.log(response);
           postObject = null;
         });
       }
@@ -420,7 +285,6 @@
           order_id: button.getAttribute("data-orderid"),
           typeAction: "archive"
         }
-        console.log(data)
         // sent ajax request
         jQuery.ajax({
           url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
@@ -456,7 +320,6 @@
         }
         let className = '.' + element.id.toString();
         let trs = document.querySelectorAll(className)
-        console.log(trs)
         for (let i = 0; i < trs.length; i++) {
           if (trs[i].classList.contains('none')) {
             trs[i].classList.remove('none')
@@ -486,7 +349,6 @@
           order_product_id: order_product_id,
           typeAction: "acceptOne"
         }
-        console.log(data)
         // sent ajax request
         jQuery.ajax({
           url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
@@ -495,8 +357,6 @@
           dataType: "json",
           contentType: "application/json",
           success: function(data) {
-            console.log('first data')
-            console.log(data)
             if (data[0] == 'owned') {
               button.parentElement.style.color = "green"
               button.parentNode.innerHTML = 'انجام شده'
@@ -512,7 +372,6 @@
                 let copyData = {};
                 let q = 0
                 for (q = 0; q < data[0].storeSessionId.length; q++) {
-                  console.log(data[0].storeSessionId[q])
                   copyData.customerSessonId = data[0].customerSessonId;
                   copyData.storeSessionId = data[0].storeSessionId[q].session_id
                   smsentSmsToCustomers([copyData]);
@@ -565,14 +424,13 @@
       /**
        * click on alert for show same category products in table
        */
+       var myDataTable=null
       function clickModal(user_id,order_id,product_id){
-        console.log('user_id:'+user_id,'order_id'+order_id,'product_id'+product_id)
         // let idNumber = button.getAttribute("data-orderid").replace(/\D/g, '');
         var data = {
           product_id: product_id,
           typeAction: "getSameCategory"
         }
-        console.log(data)
         // sent ajax request
         jQuery.ajax({
           url: "http://hypertester.ir/serverHypernetShowUnion/showProductReplacement.php",
@@ -581,20 +439,49 @@
           dataType: "json",
           contentType: "application/json",
           success: function(data) {
-            console.log('first data')
-            console.log(data)
             if (data[0].response == 'ok') {
               jQuery("#modalData tbody").children().remove()
               data[0].data.forEach((row,index) => {
                 jQuery("#modalData").append(`<tr class="btn btn-block">
                   <th scope="row">${index}</th>
-                  <td>${row.product_name}</td>
-                  <td>${row.product_price_percentage}</td>
-                  <td>${row.product_quantity}</td>
+                  <td ondblclick="changeTd(this,${row.product_id},'name')">${row.product_name}</td>
+                  <td ondblclick="changeTd(this,${row.product_id},'price')">${row.product_price_percentage}</td>
+                  <td ondblclick="changeTd(this,${row.product_id},'count')">${row.product_quantity}</td>
                 </tr>`)
               });
+              
+
+              if(jQuery('.dataTables_length').hasClass('bs-select')){
+                jQuery('.dataTables_length').removeClass('bs-select')
+              }
+              if(myDataTable !=null){
+                dataTable
+                myDataTable.destroy();
+                
+              }
+              /** dataTable scripts */
+              jQuery(document).ready(function() {
+                myDataTable=jQuery('#modalData').DataTable({
+                      "scrollY": "200px",
+                      "scrollCollapse": true,
+                  });
+                  myDataTable
+                  new $.fn.dataTable.Responsive( myDataTable );
+                  jQuery('.dataTables_length').addClass('bs-select');
+              });
+              /**end dataTable scripts */
+
+              
             } else { //e.g notok status error update
-              alert('notok')
+              
+              jQuery("#modalData tbody").children().remove()
+              jQuery("#modalData").append(`<tr><td  colspan="4" class="h4 text-danger" >خطا در گرفتن اطلاعات.</td></tr>`);
+              
+              
+              setTimeout(() => {
+                jQuery('#myModal').modal('hide');
+              }, 10000);
+
             }
           },
           error: function(xhr) {
@@ -611,4 +498,31 @@
         // show alert 
         jQuery('#myModal').modal('show');
       }
+
+
+
+      /**click function for rows in modal */
+      function clickRow(product_id){
+        
+      }
+      
+      /** change one files row in modal */
+      function changeTd(td,product_id,typeField){
+        // show td that is hide
+        jQuery('#modalDataAction').hide();
+        setTimeout(() => {
+          jQuery('#modalDataAction').show();
+        }, 3000);
+        //add input to field
+        if(typeField=='name'){
+          td.innerHTML = `<input type="text" name="name">`
+        }else if(typeField =='count'){
+          td.innerHTML = `<input type="number" name="count">`
+        }else{
+          td.innerHTML = `<input type="number" name="price">`
+        }
+        console.log(td,product_id,typeField)
+      }
+
+      
     </script>
