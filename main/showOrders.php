@@ -75,8 +75,8 @@ if (!$error) {
               echo '<td> ' . ($key + 1) . '</td>'; //1
               echo '<td> ' . $status . ' key: ' . $key . '</td>'; //2
               echo '<td> ' . $status . ' key: ' . $key . '</td>'; //3
-              switch ($value->buy_status) {
-                case 'undone': {
+              switch ($inner = [$value->buy_status,$value->proposal_completed]) {
+                case $inner[0]=='undone': {
                     echo "<td style='color:red' id='statusField" . $value->order_id . "'>"; //4
                 ?>
                     <button class="btn btn-default btn-success" id="success<?php echo $value->order_id; ?>" onclick="acceptAllOrder(<?php echo $user_id; ?>,this,event)" data-orderId="<?php echo $value->order_id; ?>">پذیرفتن</button>
@@ -85,11 +85,23 @@ if (!$error) {
                 <?php
                   }
                   break;
-                case 'done': {
+                case $inner[0]=='proposal' && $inner[1]==0: {
+                    echo "<td style='color:green'>پیشنهاد ارسال شد</td>";
+                  }
+                  break;
+                  case $inner[0]=='proposal' && $inner[1]==1: {
+                    echo "<td style='color:green'>پیشنهاد پذیرفته شد</td>";
+                  }
+                  break;
+                  case $inner[0]=='proposal' && $inner[1]==-1: {
+                    echo "<td style='color:green'>پیشنهاد رد شد</td>";
+                  }
+                  break;
+                case $inner[0]=='done': {
                     echo "<td style='color:green'>انجام شده</td>";
                   }
                   break;
-                case 'reject': {
+                case $inner[0]=='reject': {
                     echo "<td style='color:red'>رد شد</td>";
                   }
                   break;

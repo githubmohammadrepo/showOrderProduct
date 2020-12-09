@@ -75,7 +75,7 @@ class ChangeOrderStatus
           if ($this->setAllOrderStatusToReject($order_id)) {
             // run your code here
             $sql = "UPDATE pish_customer_vendor set pish_customer_vendor.buy_status = 'done' WHERE pish_customer_vendor.order_id =$order_id\n"
-            . " AND  pish_customer_vendor.vendor_id = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id)";
+              . " AND  pish_customer_vendor.vendor_id = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id) AND pish_customer_vendor.buy_status = 'undone'";
             $result = $this->conn->query($sql);
             if ($result) {
               $count = $this->conn->affected_rows;
@@ -515,12 +515,13 @@ class ChangeOrderStatus
 
 
 
-   /**
-    * save one proposal product
-    * @method validateInputs(Array)
-    * @return bool
-    */
-  private function saveOneProposalProduct(int $product_id,int $count,float $price,string $name,int $order_id,int $user_id):bool{
+  /**
+   * save one proposal product
+   * @method validateInputs(Array)
+   * @return bool
+   */
+  private function saveOneProposalProduct(int $product_id, int $count, float $price, string $name, int $order_id, int $user_id): bool
+  {
     //step 1 => get data
     $product_id = is_numeric($product_id) ? $product_id :  -1;
     $count = is_numeric($count) ? $count :  -1;
@@ -530,49 +531,49 @@ class ChangeOrderStatus
     $user_id = is_numeric($user_id) ? $user_id :  -1;
 
     //validation
-    $validation =$this->validateInputs([
-      'int'=>$product_id,
-      'int'=>$count,
-      'int'=>$price,
-      'string'=>$name,
-      'int'=>$order_id,
-      'int'=>$user_id
+    $validation = $this->validateInputs([
+      'int' => $product_id,
+      'int' => $count,
+      'int' => $price,
+      'string' => $name,
+      'int' => $order_id,
+      'int' => $user_id
     ]);
 
     $status = false;
-    if($validation){
+    if ($validation) {
       //step 2 => insert
       /* Start transaction */
       mysqli_begin_transaction($this->conn);
       try {
-        
-          //step 1 => insert into pish_product_store
+
+        //step 1 => insert into pish_product_store
         // run your code here
         $sql = "INSERT INTO pish_product_store (`product_id`,`store_id`,`product_price`,`product_quantity`) VALUES($product_id,\n"
 
-    . "(SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id LIMIT 1),$price,$count)";
+          . "(SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id LIMIT 1),$price,$count)";
 
-          $result = $this->conn->query($sql);
-          if ($result) {
-            $count = $this->conn->affected_rows;
-            if ($count > 0) {
-              //step 2 => insert into proposal_order_product
-              echo $sql = "INSERT INTO `proposal_order_product` (`order_id`, `product_id`, `order_product_quantity`, `order_product_name`, `order_product_code`, `order_product_price`, `order_product_tax`, `order_product_tax_info`, `order_product_options`, `order_product_option_parent_id`, `order_product_status`, `order_product_wishlist_id`, `order_product_wishlist_product_id`, `order_product_shipping_id`, `order_product_shipping_method`, `order_product_shipping_price`, `order_product_shipping_tax`, `order_product_shipping_params`, `order_product_parent_id`, `order_product_vendor_price`, `order_product_params`, `vendor_id_accepted`) ".
+        $result = $this->conn->query($sql);
+        if ($result) {
+          $count = $this->conn->affected_rows;
+          if ($count > 0) {
+            //step 2 => insert into proposal_order_product
+            $sql = "INSERT INTO `proposal_order_product` (`order_id`, `product_id`, `order_product_quantity`, `order_product_name`, `order_product_code`, `order_product_price`, `order_product_tax`, `order_product_tax_info`, `order_product_options`, `order_product_option_parent_id`, `order_product_status`, `order_product_wishlist_id`, `order_product_wishlist_product_id`, `order_product_shipping_id`, `order_product_shipping_method`, `order_product_shipping_price`, `order_product_shipping_tax`, `order_product_shipping_params`, `order_product_parent_id`, `order_product_vendor_price`, `order_product_params`, `vendor_id_accepted`) " .
               " VALUES ($order_id, $product_id, $count, '$name', 'product_$product_id', $price, '0.00000', '', '', '0', '', '0', '0', '', '', '0.00000', '0.00000', NULL, '0', '0.00000', NULL, NULL)";
-              $result = $this->conn->query($sql);
-              if ($result) {
-                $count = $this->conn->affected_rows;
-                if ($count > 0) {
-                   /* If code reaches this point without errors then commit the data in the database */
-                    mysqli_commit($this->conn);
-                    $status = true;
-                }else{
-                  mysqli_rollback($this->conn);
-                  $status = false;
-                }
-                // end second update
+            $result = $this->conn->query($sql);
+            if ($result) {
+              $count = $this->conn->affected_rows;
+              if ($count > 0) {
+                /* If code reaches this point without errors then commit the data in the database */
+                mysqli_commit($this->conn);
+                $status = true;
               } else {
+                mysqli_rollback($this->conn);
                 $status = false;
+              }
+              // end second update
+            } else {
+              $status = false;
             }
           } else {
             $status = false;
@@ -583,31 +584,224 @@ class ChangeOrderStatus
         //code to handle the exception
         return 'notok';
       }
-
-      }else{
-        return false;
-      }
+    } else {
+      return false;
+    }
 
     //step3 =>  return result
     return $status;
-    
   }
+
+
+  /**
+   * select if product for one store was saved in pish_store_product
+   * check if two field product_id and store_id is not doublicate
+   * @param int $product_id product id
+   * @param int $user_id user_id
+   * @return bool
+   */
+  private function productForStoreIsExist(int $product_id, int $user_id)
+  {
+    $statusComplete = false;
+    try {
+      // run your code here
+      $sql = "select id from pish_product_store WHERE `product_id`=$product_id AND `store_id` =(SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id LIMIT 1)";
+
+      $result = $this->conn->query($sql);
+      if ($result) {
+        // Associative array
+        $count = $result->num_rows;
+        if ($count >= 1) {
+          $statusComplete = true;
+        } else {
+          $statusComplete = false;
+        }
+      } else {
+        $statusComplete = false;
+      }
+    } catch (exception $e) {
+      //code to handle the exception
+      return false;
+    }
+    return $statusComplete;
+  }
+
+  /**
+   * select if product for one store was saved in pish_store_product
+   * check if two field product_id and store_id is not doublicate
+   * @param int $product_id product id
+   * @param int $order_id order_id
+   * @return bool
+   */
+  private function productForProposalProductIsExist(int $product_id, int $order_id)
+  {
+    $statusComplete = false;
+    try {
+      // run your code here
+      $sql = "SELECT proposal_order_product.order_product_id FROM proposal_order_product WHERE order_id =$order_id AND product_id = $product_id";
+
+
+      $result = $this->conn->query($sql);
+      if ($result) {
+        // Associative array
+        $count = $result->num_rows;
+        if ($count >= 1) {
+          $statusComplete = true;
+        } else {
+          $statusComplete = false;
+        }
+      } else {
+        $statusComplete = false;
+      }
+    } catch (exception $e) {
+      //code to handle the exception
+      return false;
+    }
+    return $statusComplete;
+  }
+  /**
+   * save one proposal product store
+   * @method validateInputs(Array)
+   * @return bool
+   */
+  private function saveProposalProductStore(int $product_id, int $count, float $price, string $name, int $order_id, int $user_id): bool
+  {
+    //step 1 => get data
+    $product_id = is_numeric($product_id) ? $product_id :  -1;
+    $count = is_numeric($count) ? $count :  -1;
+    $price = is_float($price) ? $price :  -1;
+    $name = is_string($name) ? strip_tags(htmlspecialchars($name)) :  '';
+    $order_id = is_numeric($order_id) ? $order_id :  -1;
+    $user_id = is_numeric($user_id) ? $user_id :  -1;
+
+    //validation
+    $validation = $this->validateInputs([
+      'int' => $product_id,
+      'int' => $count,
+      'int' => $price,
+      'string' => $name,
+      'int' => $order_id,
+      'int' => $user_id
+    ]);
+
+    $status = false;
+    if ($validation) {
+
+      //step 2 => insert
+      /* Start transaction */
+      mysqli_begin_transaction($this->conn);
+      try {
+        $resultStatus = false;
+        //step 1 => insert into pish_product_store
+        // run your code here
+        $sql = "INSERT INTO pish_product_store (`product_id`,`store_id`,`product_price`,`product_quantity`) VALUES($product_id,\n"
+
+          . "(SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id LIMIT 1),$price,$count)";
+
+        $result = $this->conn->query($sql);
+        if ($result) {
+          $count = $this->conn->affected_rows;
+          if ($count > 0) {
+            /* If code reaches this point without errors then commit the data in the database */
+            mysqli_commit($this->conn);
+            $status = true;
+          } else {
+            $status = false;
+          }
+        }
+      } catch (mysqli_sql_exception $exception) {
+        mysqli_rollback($this->conn);
+        //code to handle the exception
+        return 'notok';
+      }
+    } else {
+      return false;
+    }
+
+    //step3 =>  return result
+    return $status;
+  }
+
+  /**
+   * save one proposal product
+   * @method validateInputs(Array)
+   * @return bool
+   */
+  private function saveProposalProductOrder(int $product_id, int $count, float $price, string $name, int $order_id, int $user_id): bool
+  {
+    //step 1 => get data
+    $product_id = is_numeric($product_id) ? $product_id :  -1;
+    $count = is_numeric($count) ? $count :  -1;
+    $price = is_float($price) ? $price :  -1;
+    $name = is_string($name) ? strip_tags(htmlspecialchars($name)) :  '';
+    $order_id = is_numeric($order_id) ? $order_id :  -1;
+    $user_id = is_numeric($user_id) ? $user_id :  -1;
+
+    //validation
+    $validation = $this->validateInputs([
+      'int' => $product_id,
+      'int' => $count,
+      'int' => $price,
+      'string' => $name,
+      'int' => $order_id,
+      'int' => $user_id
+    ]);
+
+    $status = false;
+    if ($validation) {
+
+      //step 2 => insert
+      /* Start transaction */
+      mysqli_begin_transaction($this->conn);
+      try {
+        $resultStatus = false;
+        //step 1 => insert into pish_product_store
+        // run your code here
+
+        //step 2 => insert into proposal_order_product
+        $sql = "INSERT INTO `proposal_order_product` (`order_id`, `product_id`, `order_product_quantity`, `order_product_name`, `order_product_code`, `order_product_price`, `order_product_tax`, `order_product_tax_info`, `order_product_options`, `order_product_option_parent_id`, `order_product_status`, `order_product_wishlist_id`, `order_product_wishlist_product_id`, `order_product_shipping_id`, `order_product_shipping_method`, `order_product_shipping_price`, `order_product_shipping_tax`, `order_product_shipping_params`, `order_product_parent_id`, `order_product_vendor_price`, `order_product_params`, `vendor_id_accepted`) " .
+          " VALUES ($order_id, $product_id, $count, '$name', 'product_$product_id', $price, '0.00000', '', '', '0', '', '0', '0', '', '', '0.00000', '0.00000', NULL, '0', '0.00000', NULL, NULL)";
+        $result = $this->conn->query($sql);
+        if ($result) {
+          $count = $this->conn->affected_rows;
+          if ($count > 0) {
+            /* If code reaches this point without errors then commit the data in the database */
+            mysqli_commit($this->conn);
+            $status = true;
+          } else {
+            mysqli_rollback($this->conn);
+            $status = false;
+          }
+          // end second update
+        }
+      } catch (mysqli_sql_exception $exception) {
+        mysqli_rollback($this->conn);
+        //code to handle the exception
+        return 'notok';
+      }
+    } else {
+      return false;
+    }
+
+    //step3 =>  return result
+    return $status;
+  }
+
 
   /**
    * if number is valid for proposal save information
    */
-  private function validateInputs(Array $values):bool{
+  private function validateInputs(array $values): bool
+  {
     foreach ($values as $key => $value) {
-      if($key =='int' && $value == -1){
+      if ($key == 'int' && $value == -1) {
         return false;
         break;
-      }else if($key =='string' && $value==''){
+      } else if ($key == 'string' && $value == '') {
         return false;
         break;
-      }else{
-
+      } else {
       }
-
     }
     return true;
   }
@@ -616,20 +810,28 @@ class ChangeOrderStatus
   /**
    * show result saveOrderOrderProposal
    */
-  public function showResultSaveOneProposal($product_id,$count,$price,$name,$order_id,$user_id,$object){
-    if($product_id && $count && $price && strlen($name) && $order_id && $user_id){
-      if($this->saveOneProposalProduct($product_id,$count,$price,$name,$order_id,$user_id)){
-        $object->response = 'ok';
+  public function showResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id, $object)
+  {
+    if ($product_id && $count && $price && strlen($name) && $order_id && $user_id) {
+      //if product exist
+      $storeProductExist = $this->productForStoreIsExist($product_id, $user_id) ? true : false;
+      $proposalProductExist = $this->productForProposalProductIsExist($product_id,$order_id) ? true : false;
+
+      if($storeProductExist==false && $proposalProductExist==false){
+        $this->saveOneProposalProduct($product_id, $count, $price, $name, $order_id, $user_id) ?  $object->response = 'ok' : $object->response = 'notok';
+      }else if($storeProductExist==false){
+        $this->saveProposalProductStore($product_id, $count, $price, $name, $order_id, $user_id) ?  $object->response = 'ok' : $object->response = 'notok';
+      }else if($proposalProductExist==false){
+        $this->saveProposalProductOrder($product_id, $count, $price, $name, $order_id, $user_id) ?  $object->response = 'ok' : $object->response = 'notok';
       }else{
-        //does not saved
-        $object->response = 'notok';
+        //do any thing because both of them is true and this mean nothing to insert
+        return $object->response = 'ok';
       }
-    }else{
+      
+    } else {
       $object->response = 'notok';
     }
   }
-
-  
 }
 
 //global Array
@@ -662,15 +864,15 @@ if ($post && count($post) && $user_id && $typeAction) {
     } else if ($typeAction == 'archive') {
       $store->archiveAllResult($typeAction, $store, $object, $order_id, $order_product_id, $user_id);
     } else if ($typeAction == 'saveOneProposal') {
-      
-      $product_id = $post['product_id'];
-      $count=$post['count'];
-      $price=$post['price'];
-      $name=$post['name'];
-      $order_id=$post['order_id'];
-      $user_id=$post['user_id'];
 
-      $store->showResultSaveOneProposal($product_id,$count,$price,$name,$order_id,$user_id,$object);
+      $product_id = $post['product_id'];
+      $count = $post['count'];
+      $price = $post['price'];
+      $name = $post['name'];
+      $order_id = $post['order_id'];
+      $user_id = $post['user_id'];
+
+      $store->showResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id, $object);
     } else if ($typeAction == 'acceptOne') {
       if ($order_product_id) {
         $store->acceptOneResult($customeObject, $typeAction, $store, $object, $order_id, $order_product_id, $user_id);
