@@ -279,7 +279,7 @@ function clickModal(user_id, order_id, product_id, order_product_id) {
                 <td ondblclick="changeTd(this,${row.product_id},'name')">${row.product_name}</td>
                 <td ondblclick="changeTd(this,${row.product_id},'price')">${parseFloat(row.product_price_percentage).toFixed(2)}</td>
                 <td ondblclick="changeTd(this,${row.product_id},'count')">${row.product_quantity}</td>
-                <td id = "td${row.product_id}"  class = "display-inherit btn-group"role = "group"aria - label = "Basic example" ><button class="btn btn-sm btn-primary saved" onclick="rowSaveData(this,${row.product_id})">
+                <td id = "td${row.product_id}"  class = "display-inherit btn-group"role = "group"aria - label = "Basic example" ><button class="btn btn-sm btn-primary saved" onclick="rowSaveData(this,${row.product_id},${row.product_quantity},${row.product_price_percentage},'${row.product_name}')">
                 <i class="fas fa-check"></i>
                 </button>
                 <button class="btn btn-sm btn-danger reject reject${row.product_id}" onclick="rejectRowChange(this,${row.product_id})">
@@ -412,88 +412,102 @@ function rejectRowChange(button, product_id) {
     oldRowData.tdChanged = false;
 }
 
-//save message
-function rowSaveData(button, product_id) {
-    //get nput value three input
+var currentRowSelectedData = {}
+    //save message
+function rowSaveData(button, product_id, product_count, product_price, product_name) {
+    alert('clicked')
+    currentRowSelectedData.product_id = product_id;
+    currentRowSelectedData.count = product_count;
+    currentRowSelectedData.price = product_price;
+    currentRowSelectedData.name = product_name;
+    console.log('current')
+    console.log(currentRowSelectedData)
+    console.log('current')
+        //get nput value three input
     let name = document.querySelector('#name')
     let nameValue = name ? name.value : null;
     let count = document.querySelector('#count');
     let countValue = count ? count.value : null;
     let price = document.querySelector('#price');
     let priceValue = price ? price.value : null;
-
-    console.log('inputs')
-    console.log(name, count, price)
     functionName(
         functionCount(
-            functionPrice({ name, count, price, nameValue, priceValue, countValue }),
-            functionPrice({ name, count, price, nameValue, priceValue, countValue })
+            functionPrice({ name, count, price, nameValue, priceValue, countValue }, newRowData),
+            functionPrice({ name, count, price, nameValue, priceValue, countValue }, newRowData),
+            newRowData
         ),
         functionCount(
-            functionPrice({ name, count, price, nameValue, priceValue, countValue }),
-            functionPrice({ name, count, price, nameValue, priceValue, countValue })
-        )
+            functionPrice({ name, count, price, nameValue, priceValue, countValue }, newRowData),
+            functionPrice({ name, count, price, nameValue, priceValue, countValue }, newRowData),
+            newRowData
+        ), newRowData
 
     );
     // close modal
     jQuery('#myModal').modal('hide');
 
-    //old data
-    // console.log(oldRowData)
-
-    // transfer important data between old data and new data
-    newRowData.product_id = oldRowData.product_id;
+    console.log('newRowData')
+    console.log(newRowData)
+    console.log('newRowData')
+        // transfer important data between old data and new data
+    newRowData.product_id = product_id;
     newRowData.baseProduct_id = oldRowData.baseProduct_id
     newRowData.order_product_id = oldRowData.order_product_id
     newRowData.order_id = oldRowData.order_id
     newRowData.user_id = oldRowData.user_id
 
+    // //check if data changed
+    newRowData.name = newRowData.name != null ? newRowData.name : currentRowSelectedData.name;
+    newRowData.count = newRowData.count != null ? newRowData.count : currentRowSelectedData.count;
+    newRowData.price = newRowData.price != null ? newRowData.price : currentRowSelectedData.price;
 
-    //post data to webservice
+
+
+    // //post data to webservice
     saveDatabaseReplaceProduct(newRowData);
-
-    //save in dom
-    saveDom(newRowData)
-
-    //call function reject
-    let btnReject = document.querySelector('.reject' + newRowData.product_id)
-    rejectRowChange(btnReject, newRowData.product_id)
 
 }
 
 //function price
-function functionName(nullAction = null, fullAction = null) {
+function functionName(nullAction = null, fullAction = null, newRowData) {
     let dataObject = nullAction ? nullAction : fullAction;
     if (dataObject.name == null) {
         //name is null
-        newRowData.name = oldRowData.name
+        newRowData.name = null;
     } else {
         //name is not null
         newRowData.name = dataObject.nameValue
     }
+    console.log(newRowData)
+
 }
 
 //function count
-function functionCount(nullAction = null, fullAction = null) {
+function functionCount(nullAction = null, fullAction = null, newRowData) {
     let dataObject = nullAction ? nullAction : fullAction;
+
     if (dataObject.count == null) {
         //cout is null
-        newRowData.count = oldRowData.count
+        newRowData.count = null
     } else {
         //count is not null
         newRowData.count = dataObject.countValue
     }
+    console.log(newRowData)
     return dataObject;
 }
+
 //function price
-function functionPrice(dataObject) {
+function functionPrice(dataObject, newRowData) {
     if (dataObject.price == null) {
         //price is null
-        newRowData.price = oldRowData.price
+        newRowData.price = null;
     } else {
         //price is not null
         newRowData.price = dataObject.priceValue
     }
+    console.log(newRowData)
+
     return dataObject;
 }
 
@@ -516,7 +530,7 @@ function saveDom(newRowData) {
                 </td>
             </tr> `;
 
-    let tr = document.querySelector(`.baseProductId${newRowData.product_id}`)
+    let tr = document.querySelector(`.baseProductId${newRowData.baseProduct_id}`)
 
     jQuery(tr).after(newRowProduct);
     jQuery(tr).remove();
@@ -533,6 +547,7 @@ function saveDatabaseReplaceProduct(newRowData) {
         "user_id": newRowData.user_id,
         "typeAction": "saveOneProposal"
     };
+    console.log(data);
     jQuery.ajax({
         url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
         method: "POST",
@@ -540,16 +555,23 @@ function saveDatabaseReplaceProduct(newRowData) {
         dataType: "json",
         contentType: "application/json",
         success: function(data) {
-            console.log(data)
-            if (data[0].response == 'ok') {
+            if (data[0] == 'ok') {
 
-            } else { //e.g notok status error insert
+                console.log('yesyesyesyesyes')
+                    //save in dom
+                saveDom(newRowData)
 
+                //call function reject
+                let btnReject = document.querySelector('.reject' + newRowData.product_id)
+                rejectRowChange(btnReject, newRowData.product_id)
+            } else {
+                console.log('nonononon not ok');
             }
         },
         error: function(xhr) {
             console.log('error', xhr);
-            alert('خطا در اینترنت')
+            console.log('nononononoononononono')
+                // alert('خطا در اینترنت')
                 // notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
         }
     })
