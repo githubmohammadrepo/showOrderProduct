@@ -140,7 +140,7 @@ if (!$error) {
               <!-- <button class="btn btn-default" onclick="rejectOrder(<?php echo $user_id; ?>,this,event)" style="background:red;color:white;" data-orderId="<?php echo $value->order_id; ?>">رد</button> -->
               <!-- Trigger the modal with a button -->
               <!-- <button type="button" class="btn btn-warning btn" data-toggle="modal" data-target="#myModal">Open Modal</button> -->
-              <button type="button" class="btn btn-warning btn" onclick="clickModal(<?php echo $user_id; ?>,<?php echo $value->order_id; ?>,<?php echo $value->product_id; ?>)">تغییر محصول</button>
+              <button type="button" class="btn btn-warning btn" onclick="clickModal(<?php echo $user_id; ?>,<?php echo $value->order_id; ?>,<?php echo $value->product_id; ?>,<?php echo $value->order_product_id; ?>)">تغییر محصول</button>
              <?php
               echo "</td>";
             } elseif ($value->vendor_id_accepted == $result[0]->store_vendor_id) { //end if order_product_id
