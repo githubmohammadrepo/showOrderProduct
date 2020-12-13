@@ -7,6 +7,7 @@
                 order_id: button.getAttribute("data-orderid"),
                 typeAction: "acceptAll"
             }
+            console.log(data)
             // sent ajax request
         jQuery.ajax({
             url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
@@ -15,6 +16,8 @@
             dataType: "json",
             contentType: "application/json",
             success: function(data) {
+                console.log('response')
+                console.log(data)
                 if (data[0].response == 'ok') {
                     button.parentElement.style.color = "green"
                     button.parentNode.innerHTML = 'انجام شده'
@@ -493,7 +496,7 @@
                     <td id="count${newRowData.product_id}">${newRowData.count}</td>
                     <td id="price${newRowData.product_id}">${newRowData.price}</td>
                     <td style="color:red" class="status${newRowData.order_id}">              
-                        <button class="btn btn-default" id="successOne${newRowData.product_id}" onclick="acceptOneOrder(${newRowData.user_id},this,event,${newRowData.order_product_id})" style="background:green;color:white;" data-orderid="${newRowData.order_id}">قبول</button>
+                        <!--  <button class="btn btn-default" id="successOne${newRowData.product_id}" onclick="acceptOneOrder(${newRowData.user_id},this,event,${newRowData.order_product_id})" style="background:green;color:white;" data-orderid="${newRowData.order_id}">قبول</button> -->
                         <!-- <button class="btn btn-default" onclick="rejectOrder(${newRowData.user_id},this,event)" style="background:red;color:white;" data-orderId="${newRowData.order_id}">رد</button> -->
                         <!-- Trigger the modal with a button -->
                         <!-- <button type="button" class="btn btn-warning btn" data-toggle="modal" data-target="#myModal">Open Modal</button> -->

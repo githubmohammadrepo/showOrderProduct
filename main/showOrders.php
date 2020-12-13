@@ -86,15 +86,15 @@ if (!$error) {
                   }
                   break;
                 case $inner[0]=='proposal' && $inner[1]==0: {
-                    echo "<td style='color:green'>پیشنهاد ارسال شد</td>";
+                    echo "<td style='color:unset'>پیشنهاد ارسال شد</td>";
                   }
                   break;
                   case $inner[0]=='proposal' && $inner[1]==1: {
-                    echo "<td style='color:green'>پیشنهاد پذیرفته شد</td>";
+                    echo "<td style='color:unset'>پیشنهاد پذیرفته شد</td>";
                   }
                   break;
                   case $inner[0]=='proposal' && $inner[1]==-1: {
-                    echo "<td style='color:green'>پیشنهاد رد شد</td>";
+                    echo "<td style='color:unset'>پیشنهاد رد شد</td>";
                   }
                   break;
                 case $inner[0]=='done': {
@@ -133,7 +133,7 @@ if (!$error) {
             echo "<td id='name$value->product_id'>$value->order_product_name</td>";
             echo "<td id='count$value->product_id'>$value->order_product_quantity</td>";
             echo "<td id='price$value->product_id'>" . ($value->order_product_quantity * $value->order_product_price * $value->order_product_tax) . "</td>";
-            if ($value->vendor_id_accepted == null && $value->proposal_completed==0 && $value->buy_status=='undone') {
+            if ($value->vendor_id_accepted == 0 && $value->proposal_completed==0 && ($value->buy_status=='undone' || $value->buy_status=='proposal')) {
               echo "<td style='color:red' class='status" . $value->order_id . "'>";
               ?>
               <button class="btn btn-default" id="<?php echo  'successOne'.$value->product_id ?>" onclick="acceptOneOrder(<?php echo $user_id; ?>,this,event,<?php echo $value->order_product_id; ?>,event,<?php echo $value->order_product_quantity; ?>,<?php echo $value->order_product_price; ?>,'<?php echo $value->order_product_name; ?>',<?php echo $value->order_id; ?>,<?php echo $value->product_id; ?>)" style="background:green;color:white;" data-orderId="<?php echo $value->order_id; ?>">قبول</button>
@@ -146,15 +146,15 @@ if (!$error) {
             } elseif (($value->vendor_id_accepted == $result[0]->store_vendor_id) && $value->proposal_completed==0 && $value->buy_status=='done') { //end if order_product_id
               echo "<td style='color:white'>انجام شده</td>";
             } elseif( $value->proposal_completed==0 && $value->buy_status=='reject') { //end if order_product_id
-              echo "<td style='color:red'> رد شد</td>";
+              echo "<td style='color:unset'> رد شد</td>";
             } elseif( $value->proposal_completed==0 && $value->buy_status=='proposal') { //end if order_product_id
-              echo "<td style='color:red'> پیشنهاد ارسال شد</td>";
+              echo "<td style='color:unset'> پیشنهاد ارسال شد</td>";
             }elseif( $value->proposal_completed==1 && $value->buy_status=='proposal') { //end if order_product_id
-              echo "<td style='color:red'> پیشنهاد پذیرفته شد</td>";
+              echo "<td style='color:unset'> پیشنهاد پذیرفته شد</td>";
             }elseif( $value->proposal_completed==-1 && $value->buy_status=='proposal') { //end if order_product_id
-              echo "<td style='color:red'> پیشنهاد رد شد</td>";
+              echo "<td style='color:unset'> پیشنهاد رد شد</td>";
             }else { //end if order_product_id
-              echo "<td style='color:red'> رد شد</td>";
+              echo "<td style='color:unset'> رد شد</td>";
             }
             echo "</tr>";
           }

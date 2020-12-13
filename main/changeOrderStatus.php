@@ -1020,20 +1020,24 @@
       $count = isset($count) ? $count : 1;
       //if order exist insert all order and if not exist do not any thing
       //select if products exist with product_id and order_id 
-      $productExist = $this->proposalProductIsExistWithProductId($order_id, $user_id);
+      $object->productExsit = $productExist = $this->proposalProductIsExistWithProductId($order_id, $user_id);
       if (!$productExist) {
         //if not exist insert all and update this one
         mysqli_begin_transaction($this->conn);
         try {
           if($this->insertAllProductOrderToProposalProducts($order_id,$user_id,$object)){
             //continue
+            // $object->insertProductOrder='inserted';
             mysqli_commit($this->conn);
+            $object->response = 'ok';
           }else{
             mysqli_rollback($this->conn);
+            // $object->insertProductOrder = 'notInserted';
             return $object->response = 'notok';
           }
         } catch (mysqli_sql_exception $exception) {
           mysqli_rollback($this->conn);
+          // $object->throwError = 'insertOrders';
           return $object->response = 'notok';
         }
       }
@@ -1043,13 +1047,12 @@
       try {
         //code...
         //update just this product
-       $object->proposalUpdate= $update1 = $this->updateProposalProductOrder((int)$product_id, (int)$count, (float)$price, (string) $name, (int)$order_id, (int)$user_id,$baseProductId) ? true : false;
+       $object->updateProposal = $update1 = $this->updateProposalProductOrder((int)$product_id, (int)$count, (float)$price, (string) $name, (int)$order_id, (int)$user_id,$baseProductId) ? true : false;
         //update
-        $updated2 = $this->updateOrderTypeToProposal($order_id, $user_id,$object) ? true : false;
+        $object->updateOrder = $updated2 = $this->updateOrderTypeToProposal($order_id, $user_id,$object) ? true : false;
         if ($update1 == false || $updated2 == false) {
           mysqli_rollback($this->conn);
           $object->response = 'notok';
-          $object->status = 'one of them is false';
         } else {
 
           //if every thing is ok insert into pish_store_product table if not exsit
@@ -1057,7 +1060,7 @@
           $objcet->status =$storeProductExist = $this->productForStoreIsExist($product_id, $user_id) ? true : false;
           if($storeProductExist){
             //update
-            $object->status2=$updated = $this->updateProposalProductStore($product_id, $count, $price, $name, $order_id,$user_id) ? true : false;
+           $updated = $this->updateProposalProductStore($product_id, $count, $price, $name, $order_id,$user_id) ? true : false;
             if($updated){
               mysqli_commit($this->conn);
               $object->response = 'ok';
@@ -1070,11 +1073,10 @@
             $storeSaved = $this->saveProposalProductStore($product_id, $count, $price, $name, $order_id, $user_id) ? true :  false;
             if($storeSaved){
               mysqli_commit($this->conn);
-              $object->response = 'ok saved';
+              $object->response = 'ok';
             }else{
               //update sotre product
               $object->response = 'notok';
-              $object->status = 'store does not saved';
             }
           }
           
@@ -1156,8 +1158,6 @@
               $count = mysqli_num_rows($result);
               array_push($rows,$row);
             }
-            $object->data = $rows;
-            $object->count = $count;
              for($i=0;$i<$count;$i++){
                $row =$rows[$i];
               // array_push($object->data[],$row);
@@ -1244,6 +1244,7 @@
 
           if($counter == $count){
             mysqli_commit($this->conn);
+            return true;
           }else{
             mysqli_rollback($this->conn);
           }
@@ -1381,13 +1382,13 @@
   function jsonEncodeOutput($normalObject = null, $customeObject = null)
   {
     if (isset($normalObject)) {
-      // echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      // echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else if (isset($customeObject)) {
       echo json_encode([$customeObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
-      // echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      // echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
   }
 
