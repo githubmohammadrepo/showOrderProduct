@@ -24,7 +24,7 @@
                     let tds = document.querySelectorAll(tdsClassName.toString())
                     notificationDisplay(tdsClassName, 'انجام شده', 'transparent', 'white')
                         //send sms to customer
-                    smsentSmsToCustomers(data);
+                    smsentSmsToCustomers(data,'خرید شما با موفقیت ثبت شد');
                 } else if (data[0].response == 'other') {
                     button.parentNode.innerHTML = 'رد شد'
                     removeAlert(false, null);
@@ -43,17 +43,39 @@
         })
     }
 
-    function smsentSmsToCustomers(data) {
+    function smsentSmsToCustomers(data,text=null) {
         let jsonLiveSite = "http://hypertester.ir/index.php?option=com_jchat&format=json";
+        console.log('sms data')
+        console.log(data)        
+        if(text==null){
+            text = "<a href='http://hypertester.ir/%D9%86%D8%A7%D8%AD%DB%8C%D9%87-%DA%A9%D8%A7%D8%B1%D8%A8%D8%B1%DB%8C'>سلام خریدار گرامی پیشنهاد خود را چک کنید</a>"
+        }else{
+            text = "<a href='http://hypertester.ir/%D9%86%D8%A7%D8%AD%DB%8C%D9%87-%DA%A9%D8%A7%D8%B1%D8%A8%D8%B1%DB%8C'>"+text+"</a>"
+        }
+        // sent ajax request
         postObject = {
-            "message": "<?php echo 'خریدار گرامی خرید شما با موفقیت پذیرفته شد'; ?>",
-            "task": "stream.saveEntity",
-            "to": data[0].customerSessonId.toString(), //error - solved => ownUser sessionId
-            "tologged": data[0].storeSessionId.toString()
-        };
-        jQuery.post(jsonLiveSite, postObject, function(response) {
-            postObject = null;
-        });
+            "message": ''+text+'',
+             "task": "stream.saveEntity",
+             "to":''+data[0].customerSessonId.toString()+'', //error - solved => ownUser sessionId
+             "tologged":''+data[0].storeSessionId.toString()+''
+           };
+
+           jQuery.post(jsonLiveSite, postObject, function(response) {
+             console.log(response);
+             postObject = null;
+
+           }).done(function(data){
+               if(data && data.storing && data.storing.details.id){
+                   removeAlert(false,'پیام شما به خریدار ارسال شد',true)
+               }
+               console.log('done')
+               console.log(data)
+           }).fail(function(error){
+                removeAlert(false,'خریدار مورد نظر شما آنلاین نیست')
+               console.log('fail')
+               console.log(error)
+           })
+
     }
 
     // notification display for change display and show notifcation for user
@@ -83,7 +105,7 @@
             dataType: "json",
             contentType: "application/json",
             success: function(data) {
-                if (data[0] == 'ok') {
+                if (data[0].response == 'ok') {
                     button.parentElement.style.color = "red"
                     button.parentNode.innerHTML = 'رد شد'
                     notificationDisplay(tdsClassName, 'رد شد', 'transparent', 'red')
@@ -117,7 +139,7 @@
             dataType: "json",
             contentType: "application/json",
             success: function(data) {
-                if (data[0] == 'ok') {
+                if (data[0].response == 'ok') {
                     button.parentElement.style.color = "red"
                     button.parentNode.parentNode.remove();
                     // button.parentNode.innerHTML = 'بایگانی شد'
@@ -185,13 +207,12 @@
             contentType: "application/json",
             success: function(data) {
                 console.log(data)
-                if (data[0] == 'ok') {
+                if (data[0].response == 'ok') {
                     //end fire function accept all
                     button.parentElement.style.color = "green"
                     button.parentNode.innerHTML = 'انجام شده'
-                    let btn = document.querySelector('#statusField' + button.getAttribute("data-orderid"));
-                    btn.innerHTML = 'انجام شد';
-
+                    // let btn = document.querySelector('#statusField' + button.getAttribute("data-orderid"));
+                    // btn.innerHTML = 'انجام شد';
                     console.log('yesyesyesyesyes');
                 } else {
                     console.log('nonononon not ok');
@@ -212,8 +233,13 @@
     /**
     * remove alert notification
     */
-    function removeAlert(isClicked = false, text = null) {
+    function removeAlert(isClicked = false, text = null,customeClass=null) {
         let textElement = document.querySelector('#alertText');
+        if(customeClass != null){
+           textElement.parentElement.classList.remove('alert-danger')
+           textElement.parentElement.classList.add('alert-success')
+           textElement.style.color='black';
+        }
         if (text != null) {
             textElement.innerHTML = text.toString()
         } else {
@@ -532,7 +558,7 @@
             contentType: "application/json",
             success: function(data) {
                 console.log(data)
-                if (data[0] == 'ok') {
+                if (data[0].response == 'ok') {
                     //save in dom
                     saveDom(newRowData)
 
@@ -556,8 +582,62 @@
         let acceptAllId = 'success' + newRowData.order_id;
         let acceptOneId = 'successOne' + newRowData.product_id;
 
-        let sentPoposalButton = `<button class="btn btn-default btn-success" id="proposal${newRowData.order_id}" onclick="sentProposalAllOrder(${newRowData.user_id},this,event)" data-orderid="${newRowData.order_id}">ارسال پیشنهاد</button>`
+        let sentPoposalButton = `<button class="btn btn-default btn-success" id="proposal${newRowData.order_id}" onclick="sentProposalAllOrder(${newRowData.user_id},this,event,${newRowData.order_id})" data-orderid="${newRowData.order_id}">ارسال پیشنهاد</button>`
             //insert send proposal button
         jQuery('#' + acceptAllId).after(sentPoposalButton);
         jQuery('#' + acceptAllId).remove();
     }
+
+
+
+    /**
+    * sent store order proposal to consumer
+     */
+     function sentProposalAllOrder(user_id,button,e,order_id){
+
+         //session ids
+         var data = {
+                user_id: user_id,
+                order_id: order_id,
+                typeAction: "sentStoreProposal"
+            }
+            console.log(data)
+            // sent ajax request
+        jQuery.ajax({
+            url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
+            method: "POST",
+            data: JSON.stringify(data),
+            dataType: "json",
+            contentType: "application/json",
+            success: function(data) {
+                console.log(data)
+                if(data[0].customerSessonId && data[0].storeSessionId){
+                    smsentSmsToCustomers(data);
+
+                    let headButtonProposal = '#proposal'+order_id;
+                    // jQuery(headButtonProposal).remove();
+                    // let haedButtonReject = '#reject'+order_id;
+                    // jQuery(haedButtonReject).remove();
+                    let parentTd = document.querySelector(headButtonProposal)
+                    parentTd.parentElement.innerHTML = 'پیشنهاد ارسال شد'
+                    
+                    let rowTd = '.status'+order_id;
+                    let tds = document.querySelectorAll(rowTd)
+                    console.log('rowTd')
+                    console.log(tds)
+                    tds.forEach(element => {
+                        element.innerHTML = 'سفارش ارسال شد'
+                        element.style.color = 'white'
+                    });
+                }else{
+                    removeAlert(false, 'خریدار مورد نظر شما آنلاین نیست');
+                }
+            },
+            error: function(xhr) {
+                console.log('error', xhr);
+            }
+        })
+
+
+        
+     }

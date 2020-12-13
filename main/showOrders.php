@@ -85,12 +85,21 @@ if (!$error) {
                 <?php
                   }
                   break;
-                case $inner[0]=='proposal' && $inner[1]==0: {
+                case $inner[0]=='proposal' && $inner[1]==2: {
                     echo "<td style='color:unset'>پیشنهاد ارسال شد</td>";
                   }
                   break;
                   case $inner[0]=='proposal' && $inner[1]==1: {
                     echo "<td style='color:unset'>پیشنهاد پذیرفته شد</td>";
+                  }
+                  break;
+                  case $inner[0]=='proposal' && $inner[1]==0: {//وضعیت در حال تکمیل سفارش از طرف فروشگاه
+                    echo "<td style='color:unset'>".
+                    "<button class='btn btn-default btn-success' id='proposal$value->order_id' onclick='sentProposalAllOrder($user_id,this,event,$value->order_id)' data-orderid='$value->order_id'>ارسال پیشنهاد</button> ";
+                    ?>
+                    <button class="btn btn-default btn-danger" id="reject<?php echo $value->order_id; ?>" onclick="rejectAllOrder(<?php echo $user_id; ?>,this,event)" data-orderId="<?php echo $value->order_id; ?>">رد کردن</button>
+                    <?php
+                    echo "</td>";
                   }
                   break;
                   case $inner[0]=='proposal' && $inner[1]==-1: {
@@ -145,9 +154,15 @@ if (!$error) {
               echo "</td>";
             } elseif (($value->vendor_id_accepted == $result[0]->store_vendor_id) && $value->proposal_completed==0 && $value->buy_status=='done') { //end if order_product_id
               echo "<td style='color:white'>انجام شده</td>";
-            } elseif( $value->proposal_completed==0 && $value->buy_status=='reject') { //end if order_product_id
-              echo "<td style='color:unset'> رد شد</td>";
-            } elseif( $value->proposal_completed==0 && $value->buy_status=='proposal') { //end if order_product_id
+            } elseif( $value->buy_status=='reject') { //end if order_product_id
+              echo "<td style='color:red' class='status" . $value->order_id . "'>";
+              ?>
+              رد شد
+             <?php
+              echo "</td>";
+            } elseif( $value->proposal_completed==2 && $value->buy_status=='proposal') { //end if order_product_id
+              echo "<td style='color:unset'> پیشنهاد ارسال شد</td>";
+            }elseif( $value->proposal_completed==0 && $value->buy_status=='proposal') { //end if order_product_id
               echo "<td style='color:unset'> پیشنهاد ارسال شد</td>";
             }elseif( $value->proposal_completed==1 && $value->buy_status=='proposal') { //end if order_product_id
               echo "<td style='color:unset'> پیشنهاد پذیرفته شد</td>";

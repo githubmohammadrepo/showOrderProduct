@@ -60,13 +60,16 @@
      * accept type
      * goal: reject all record that has this order_id to buy_satus to "reject"
      */
-    public function setOrderStatusToAccept($user_id, $order_id)
+    public function setOrderStatusToAccept($user_id, $order_id,&$object)
     {
       $statusComplete = 'notok';
+      $object->value= $this->getIsAllOrderProductAccepted($order_id);
       if ($this->getIsAllOrderProductAccepted($order_id)) {
+        $object->other1='allOrderProductAccepted';
         return 'other';
       } else {
         if ($this->isRejectedOrderForMe($user_id, $order_id)) {
+          $object->other2 = 'rejectedForMe';
           return 'other';
         } else {
           /* Start transaction */
@@ -74,19 +77,19 @@
           try {
             if ($this->setAllOrderStatusToReject($order_id)) {
               // run your code here
-              $sql = "UPDATE pish_customer_vendor set pish_customer_vendor.buy_status = 'done' WHERE pish_customer_vendor.order_id =$order_id\n"
-                . " AND  pish_customer_vendor.vendor_id = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id) AND pish_customer_vendor.buy_status = 'undone'";
-              $result = $this->conn->query($sql);
+              $object->sql = $sql = "UPDATE pish_customer_vendor set pish_customer_vendor.buy_status = 'done' WHERE pish_customer_vendor.order_id =$order_id\n"
+                . " AND  pish_customer_vendor.vendor_id = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id)";
+             $object->result =$result = $this->conn->query($sql);
               if ($result) {
-
-                if (true) {
+                if ( $count = $this->conn->affected_rows) {
+                $object->resultText = 'isOk';
 
                   // start second update
                   $sql = "UPDATE pish_hikashop_order_product set pish_hikashop_order_product.vendor_id_accepted = (SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id) WHERE pish_hikashop_order_product.order_id =$order_id\n";
-                  $result = $this->conn->query($sql);
+                  $object->result2 = $result = $this->conn->query($sql);
                   if ($result) {
-
-                    $count = $this->conn->affected_rows;
+                    $object->resultTest= 'order_productUpdated complete';
+                    $object->count = $count = $this->conn->affected_rows;
                     if ($count > 0) {
                       /* If code reaches this point without errors then commit the data in the database */
                       mysqli_commit($this->conn);
@@ -330,7 +333,7 @@
 
           . "\n"
 
-          . "WHERE order_id = $order_id AND pish_hikashop_order_product.vendor_id_accepted is not null)as acceptAll";
+          . "WHERE order_id = $order_id AND pish_hikashop_order_product.vendor_id_accepted !=0)as acceptAll";
 
         $result = $this->conn->query($sql);
         if ($result) {
@@ -472,7 +475,7 @@
     {
       // set all record that have this order id to reject 
       $object = null;
-      $arrayData->response = $store->setOrderStatusToAccept($user_id, $order_id);
+      $arrayData->response = $store->setOrderStatusToAccept($user_id, $order_id,$arrayData);
       if ($arrayData->response == 'ok') {
         $arrayData->storeSessionId = $this->session->getId();
         // set customerSessionId property to customer session id
@@ -864,6 +867,7 @@
           `order_id` = '$order_id',
           `product_id` = '$product_id',
           `order_product_name` = '$name',
+          `order_product_quantity` = '$count',
           `order_product_code` = 'product_$product_id',
           `order_product_price` = $price,
           `vendor_id_accepted` = (SELECT id FROM pish_phocamaps_marker_store WHERE user_id = $user_id) 
@@ -1307,6 +1311,43 @@
         $object->response = 'notok';
       }
     }
+
+    /**
+     * sent poposal store Orders to consumer
+     * change poposal status to 2 => this mean poposal order is sent to consumer
+     */
+
+     public function sentStoreProposal(int $order_id,int $user_id,&$object){
+      try {
+        // run your code here
+        $sql = "UPDATE `pish_customer_vendor` SET `pish_customer_vendor`.`proposal_completed` =2 WHERE order_id = $order_id and pish_customer_vendor.vendor_id = (SELECT id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id)";
+        $result = $this->conn->query($sql);
+        $count = $this->conn->affected_rows;
+        if ($result) {
+          if($count>0){
+            //get session store Ownere and consumer session ids
+            $object->response = 'ok';
+            $object->storeSessionId = $this->session->getId();
+            // set customerSessionId property to customer session id
+            if ($this->getCustomerSessionId($order_id)) {
+              $object->customerSessonId =$this->customerSessionId;
+            } else {
+              $object->customerSessonId =$this->customerSessionId;
+            }
+            
+          }else{
+            $object->response == 'notok';
+          }
+        } else {
+          $object->response == 'notok';
+        }
+      } catch (exception $e) {
+        //code to handle the exception
+        $object->response == 'notok';
+
+      }
+     }
+
   }
 
   //global Array
@@ -1314,7 +1355,6 @@
   //   using class
   $json = file_get_contents('php://input');
   $post = json_decode($json, true);
-
   $user_id = $post['user_id'];
   $order_id = null;
   if (array_key_exists('order_id', $post)) {
@@ -1357,6 +1397,11 @@
         $user_id = $post['user_id'];
 
         $store->showResultSaveAllProposal($product_id, $count, $price, $name, $order_id, $user_id, $object);
+      } else if ($typeAction == 'sentStoreProposal') {
+        $order_id = $post['order_id'];
+        $user_id = $post['user_id'];
+        $object->status = 'hi';
+        $store->sentStoreProposal($order_id, $user_id, $object);
       } else if ($typeAction == 'acceptOne') {
         if ($order_product_id) {
           $store->acceptOneResult($customeObject, $typeAction, $store, $object, $order_id, $order_product_id, $user_id);
@@ -1382,13 +1427,13 @@
   function jsonEncodeOutput($normalObject = null, $customeObject = null)
   {
     if (isset($normalObject)) {
-      echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      // echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      // echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else if (isset($customeObject)) {
       echo json_encode([$customeObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
-      echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      // echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      // echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
   }
 
