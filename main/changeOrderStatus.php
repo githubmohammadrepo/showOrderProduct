@@ -939,8 +939,7 @@
             . "(SELECT pish_phocamaps_marker_store.id FROM pish_phocamaps_marker_store WHERE pish_phocamaps_marker_store.user_id = $user_id)";
             
             $result = $this->conn->query($sql);
-            if ($result) {
-            $object->proposal = 'hi';
+            if ($result) {           
             
             return true;
             // end second update
@@ -1015,14 +1014,88 @@
     /**
      * show result saveOrderOrderProposal
      */
-    public function showResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id,$baseProductId, $object)
+    public function showResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id,$baseProductId, &$object)
+    {
+      $price = isset($price) ? $price : 1;
+      $count = isset($count) ? $count : 1;
+      //if order exist insert all order and if not exist do not any thing
+      //select if products exist with product_id and order_id 
+      $productExist = $this->proposalProductIsExistWithProductId($order_id, $user_id);
+      if (!$productExist) {
+        //if not exist insert all and update this one
+        mysqli_begin_transaction($this->conn);
+        try {
+          if($this->insertAllProductOrderToProposalProducts($order_id,$user_id,$object)){
+            //continue
+            mysqli_commit($this->conn);
+          }else{
+            mysqli_rollback($this->conn);
+            return $object->response = 'notok';
+          }
+        } catch (mysqli_sql_exception $exception) {
+          mysqli_rollback($this->conn);
+          return $object->response = 'notok';
+        }
+      }
+
+      //start transaction
+      mysqli_begin_transaction($this->conn);
+      try {
+        //code...
+        //update just this product
+       $object->proposalUpdate= $update1 = $this->updateProposalProductOrder((int)$product_id, (int)$count, (float)$price, (string) $name, (int)$order_id, (int)$user_id,$baseProductId) ? true : false;
+        //update
+        $updated2 = $this->updateOrderTypeToProposal($order_id, $user_id,$object) ? true : false;
+        if ($update1 == false || $updated2 == false) {
+          mysqli_rollback($this->conn);
+          $object->response = 'notok';
+          $object->status = 'one of them is false';
+        } else {
+
+          //if every thing is ok insert into pish_store_product table if not exsit
+          //insert into
+          $objcet->status =$storeProductExist = $this->productForStoreIsExist($product_id, $user_id) ? true : false;
+          if($storeProductExist){
+            //update
+            $object->status2=$updated = $this->updateProposalProductStore($product_id, $count, $price, $name, $order_id,$user_id) ? true : false;
+            if($updated){
+              mysqli_commit($this->conn);
+              $object->response = 'ok';
+            }else{
+              mysqli_rollback($this->conn);
+              $object->response= 'notok';
+            }
+          }else{
+            //insert
+            $storeSaved = $this->saveProposalProductStore($product_id, $count, $price, $name, $order_id, $user_id) ? true :  false;
+            if($storeSaved){
+              mysqli_commit($this->conn);
+              $object->response = 'ok saved';
+            }else{
+              //update sotre product
+              $object->response = 'notok';
+              $object->status = 'store does not saved';
+            }
+          }
+          
+        }
+      } catch (mysqli_sql_exception $exception) {
+        mysqli_rollback($this->conn);
+        $object->response = 'notok';
+      }
+      
+    }
+/**
+     * show result saveOrderOrderProposal
+     */
+    public function oldshowResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id,$baseProductId, $object)
     {
       $price = isset($price) ? $price : 1;
       $count = isset($count) ? $count : 1;
       
       if ($product_id && $count && strlen($name) && $order_id && $user_id && $baseProductId) {
         //if product exist
-        $storeProductExist = $this->productForStoreIsExist($product_id, $user_id) ? true : false;
+       
         $proposalProductExist = $this->productForProposalProductIsExist($baseProductId, $order_id) ? true : false;
 
         if ($storeProductExist == false && $proposalProductExist == false) {
@@ -1040,7 +1113,6 @@
         $object->response = 'notok';
       }
     }
-
 
     /**
      * if product with this id is exist
@@ -1219,7 +1291,7 @@
       try {
         //code...
         //update just this product
-        $update1 = $this->updateProposalProductOrder((int)$product_id, (int)$count, (float)$price, (string) $name, (int)$order_id, (int)$user_id) ? true : false;
+        $update1 = $this->updateProposalProductOrder((int)$product_id, (int)$count, (float)$price, (string) $name, (int)$order_id, (int)$user_id,$product_id) ? true : false;
         //update
         $updated2 = $this->updateOrderTypeToProposal($order_id, $user_id,$object) ? true : false;
         if ($update1 == false || $updated2 == false) {
@@ -1309,13 +1381,13 @@
   function jsonEncodeOutput($normalObject = null, $customeObject = null)
   {
     if (isset($normalObject)) {
-      echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      // echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      // echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else if (isset($customeObject)) {
       echo json_encode([$customeObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
-      echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      // echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      // echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
   }
 
