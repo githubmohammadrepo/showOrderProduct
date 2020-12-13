@@ -163,16 +163,17 @@ function removeArchivedRow(className) {
 }
 
 //change or set one order_product to accept
-function acceptOneOrder(user_id, button, event, order_product_id) {
-    let idNumber = button.getAttribute("data-orderid").replace(/\D/g, '');
-    let tdsClassName = '.status' + idNumber;
-    var data = {
-            user_id: user_id,
-            order_id: button.getAttribute("data-orderid"),
-            order_product_id: order_product_id,
-            typeAction: "acceptOne"
-        }
-        // sent ajax request
+function acceptOneOrder(user_id, button, event, order_product_id, event, count, price, name, order_id, product_id) {
+    let data = {
+        "product_id": product_id,
+        "count": count,
+        "price": price,
+        "name": name,
+        "order_id": order_id,
+        "user_id": user_id,
+        "typeAction": "saveَAllProposal"
+    };
+    console.log(data);
     jQuery.ajax({
         url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
         method: "POST",
@@ -180,48 +181,30 @@ function acceptOneOrder(user_id, button, event, order_product_id) {
         dataType: "json",
         contentType: "application/json",
         success: function(data) {
-            if (data[0] == 'owned') {
-                button.parentElement.style.color = "green"
-                button.parentNode.innerHTML = 'انجام شده'
-            } else if (data[0].response == 'ok') {
-                //fire function accept all
-                let btnAcceptAll = document.querySelector("#success" + button.getAttribute("data-orderid"))
-                    //send sms to customer
-                if (data[0].customerSessonId == null) {
-                    //user is offline
-                    removeAlert(false, 'کاربر مورد نظر شما انلاین نیست');
-                } else {
-                    //user is online
-                    let copyData = {};
-                    let q = 0
-                    for (q = 0; q < data[0].storeSessionId.length; q++) {
-                        copyData.customerSessonId = data[0].customerSessonId;
-                        copyData.storeSessionId = data[0].storeSessionId[q].session_id
-                        smsentSmsToCustomers([copyData]);
-                    }
-                }
+            console.log(data)
+            if (data[0] == 'ok') {
                 //end fire function accept all
                 button.parentElement.style.color = "green"
                 button.parentNode.innerHTML = 'انجام شده'
                 let btn = document.querySelector('#statusField' + button.getAttribute("data-orderid"));
-                btn.innerHTML = 'انجام شد'
-            } else if (data[0] == 'other') {
-                removeAlert(false, null);
+                btn.innerHTML = 'انجام شد';
+
+                console.log('yesyesyesyesyes');
+            } else {
+                console.log('nonononon not ok');
                 button.parentElement.style.color = 'red'
-                button.parentNode.innerHTML = 'بلاک شده'
-            } else { //e.g notok status error update
-                button.parentElement.style.color = "blue"
-                button.parentNode.innerHTML = 'خطا در عملیات'
-                notificationDisplay(tdsClassName, 'خطا در عملیات', 'blue', 'white')
+                button.parentNode.innerHTML = 'خطلا در عملیات'
             }
         },
         error: function(xhr) {
             console.log('error', xhr);
+            button.parentElement.style.color = "blue"
             button.parentNode.innerHTML = 'خطا در اینترنت'
-                // notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
+
         }
     })
 }
+
 
 /**
  * remove alert notification
@@ -258,10 +241,9 @@ function clickModal(user_id, order_id, product_id, order_product_id) {
     oldRowData.order_product_id = order_product_id;
     oldRowData.user_id = user_id;
     var data = {
-        product_id: product_id,
-        typeAction: "getSameCategory"
-    }
-    console.log(data)
+            product_id: product_id,
+            typeAction: "getSameCategory"
+        }
         // sent ajax request
     jQuery.ajax({
             url: "http://hypertester.ir/serverHypernetShowUnion/showProductReplacement.php",
@@ -270,7 +252,6 @@ function clickModal(user_id, order_id, product_id, order_product_id) {
             dataType: "json",
             contentType: "application/json",
             success: function(data) {
-                console.log(data)
                 if (data[0].response == 'ok') {
                     jQuery("#modalData tbody").children().remove()
                     data[0].data.forEach((row, index) => {
@@ -345,7 +326,6 @@ var newRowData = { tdChanged: false, dataAppended: false };
 /**click function for rows in modal */
 function clickrow(tr, product_id) {
     if (oldRowData.tdChanged == false) {
-        console.log('inside hi')
         let childs = jQuery(tr).children().length
         for (let y = 0; y < childs; y++) {
             if (y == 1) {
@@ -415,15 +395,11 @@ function rejectRowChange(button, product_id) {
 var currentRowSelectedData = {}
     //save message
 function rowSaveData(button, product_id, product_count, product_price, product_name) {
-    alert('clicked')
     currentRowSelectedData.product_id = product_id;
     currentRowSelectedData.count = product_count;
     currentRowSelectedData.price = product_price;
     currentRowSelectedData.name = product_name;
-    console.log('current')
-    console.log(currentRowSelectedData)
-    console.log('current')
-        //get nput value three input
+    //get nput value three input
     let name = document.querySelector('#name')
     let nameValue = name ? name.value : null;
     let count = document.querySelector('#count');
@@ -475,7 +451,6 @@ function functionName(nullAction = null, fullAction = null, newRowData) {
         //name is not null
         newRowData.name = dataObject.nameValue
     }
-    console.log(newRowData)
 
 }
 
@@ -490,7 +465,6 @@ function functionCount(nullAction = null, fullAction = null, newRowData) {
         //count is not null
         newRowData.count = dataObject.countValue
     }
-    console.log(newRowData)
     return dataObject;
 }
 
@@ -503,7 +477,6 @@ function functionPrice(dataObject, newRowData) {
         //price is not null
         newRowData.price = dataObject.priceValue
     }
-    console.log(newRowData)
 
     return dataObject;
 }
@@ -544,7 +517,6 @@ function saveDatabaseReplaceProduct(newRowData) {
         "user_id": newRowData.user_id,
         "typeAction": "saveOneProposal"
     };
-    console.log(data)
     jQuery.ajax({
         url: "http://hypertester.ir/serverHypernetShowUnion/changeOrderStatus.php",
         method: "POST",
@@ -553,24 +525,19 @@ function saveDatabaseReplaceProduct(newRowData) {
         contentType: "application/json",
         success: function(data) {
             if (data[0] == 'ok') {
-
-                console.log('yesyesyesyesyes')
-                    //save in dom
+                //save in dom
                 saveDom(newRowData)
 
                 removeExtraButtons(newRowData);
                 //call function reject
                 let btnReject = document.querySelector('.reject' + newRowData.product_id)
                 rejectRowChange(btnReject, newRowData.product_id)
-            } else {
-                console.log('nonononon not ok');
-            }
+            } else {}
         },
         error: function(xhr) {
             console.log('error', xhr);
-            console.log('nononononoononononono')
-                // alert('خطا در اینترنت')
-                // notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
+            // alert('خطا در اینترنت')
+            // notificationDisplay(tdsClassName,'خطا در اینترنت','red','white')
         }
     })
 }
@@ -585,5 +552,4 @@ function removeExtraButtons(newRowData) {
         //insert send proposal button
     jQuery('#' + acceptAllId).after(sentPoposalButton);
     jQuery('#' + acceptAllId).remove();
-    jQuery('#' + acceptOneId).remove();
 }

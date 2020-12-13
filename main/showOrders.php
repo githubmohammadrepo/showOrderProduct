@@ -133,19 +133,27 @@ if (!$error) {
             echo "<td id='name$value->product_id'>$value->order_product_name</td>";
             echo "<td id='count$value->product_id'>$value->order_product_quantity</td>";
             echo "<td id='price$value->product_id'>" . ($value->order_product_quantity * $value->order_product_price * $value->order_product_tax) . "</td>";
-            if ($value->vendor_id_accepted == null) {
+            if ($value->vendor_id_accepted == null && $value->proposal_completed==0 && $value->buy_status=='undone') {
               echo "<td style='color:red' class='status" . $value->order_id . "'>";
               ?>
-              <button class="btn btn-default" onclick="acceptOneOrder(<?php echo $user_id; ?>,this,event,<?php echo $value->order_product_id; ?>)" style="background:green;color:white;" data-orderId="<?php echo $value->order_id; ?>">قبول</button>
+              <button class="btn btn-default" id="<?php echo  'successOne'.$value->product_id ?>" onclick="acceptOneOrder(<?php echo $user_id; ?>,this,event,<?php echo $value->order_product_id; ?>,event,<?php echo $value->order_product_quantity; ?>,<?php echo $value->order_product_price; ?>,'<?php echo $value->order_product_name; ?>',<?php echo $value->order_id; ?>,<?php echo $value->product_id; ?>)" style="background:green;color:white;" data-orderId="<?php echo $value->order_id; ?>">قبول</button>
               <!-- <button class="btn btn-default" onclick="rejectOrder(<?php echo $user_id; ?>,this,event)" style="background:red;color:white;" data-orderId="<?php echo $value->order_id; ?>">رد</button> -->
               <!-- Trigger the modal with a button -->
               <!-- <button type="button" class="btn btn-warning btn" data-toggle="modal" data-target="#myModal">Open Modal</button> -->
               <button type="button" class="btn btn-warning btn" onclick="clickModal(<?php echo $user_id; ?>,<?php echo $value->order_id; ?>,<?php echo $value->product_id; ?>,<?php echo $value->order_product_id; ?>)">تغییر محصول</button>
              <?php
               echo "</td>";
-            } elseif ($value->vendor_id_accepted == $result[0]->store_vendor_id) { //end if order_product_id
+            } elseif (($value->vendor_id_accepted == $result[0]->store_vendor_id) && $value->proposal_completed==0 && $value->buy_status=='done') { //end if order_product_id
               echo "<td style='color:white'>انجام شده</td>";
-            } else { //end if order_product_id
+            } elseif( $value->proposal_completed==0 && $value->buy_status=='reject') { //end if order_product_id
+              echo "<td style='color:red'> رد شد</td>";
+            } elseif( $value->proposal_completed==0 && $value->buy_status=='proposal') { //end if order_product_id
+              echo "<td style='color:red'> پیشنهاد ارسال شد</td>";
+            }elseif( $value->proposal_completed==1 && $value->buy_status=='proposal') { //end if order_product_id
+              echo "<td style='color:red'> پیشنهاد پذیرفته شد</td>";
+            }elseif( $value->proposal_completed==-1 && $value->buy_status=='proposal') { //end if order_product_id
+              echo "<td style='color:red'> پیشنهاد رد شد</td>";
+            }else { //end if order_product_id
               echo "<td style='color:red'> رد شد</td>";
             }
             echo "</tr>";
