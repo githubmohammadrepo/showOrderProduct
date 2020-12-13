@@ -826,7 +826,7 @@
      * @method validateInputs(Array)
      * @return bool
      */
-    private function updateProposalProductOrder(int $product_id, int $count, float $price, string $name, int $order_id, int $user_id): bool
+    private function updateProposalProductOrder(int $product_id, int $count, float $price, string $name, int $order_id, int $user_id,$baseProductId): bool
     {
       //step 1 => get data
       $product_id = is_numeric($product_id) ? $product_id :  -1;
@@ -835,6 +835,7 @@
       $name = is_string($name) ? strip_tags(htmlspecialchars($name)) :  '';
       $order_id = is_numeric($order_id) ? $order_id :  -1;
       $user_id = is_numeric($user_id) ? $user_id :  -1;
+      $baseProductId = is_numeric($baseProductId) ? $baseProductId : -1;
 
       //validation
       $validation = $this->validateInputs([
@@ -869,7 +870,7 @@
 
         WHERE
           `order_id` = $order_id
-          AND `product_id` = $product_id";
+          AND `product_id` = $baseProductId";
 
           $result = $this->conn->query($sql);
           if ($result) {
@@ -965,7 +966,7 @@
      * @param bool $sotreProduct true insert ,false update
      * @return bool
      */
-    private function transactionProcess($proposalProduct, $sotreProduct, int $product_id, int $count, float $price, string $name, int $order_id, int $user_id): bool
+    private function transactionProcess($proposalProduct, $sotreProduct, int $product_id, int $count, float $price, string $name, int $order_id,int $baseProductId,int $user_id): bool
     {
       /* Start transaction */
       $status = array();
@@ -979,17 +980,18 @@
             $this->saveProposalProductStore($product_id, $count, $price, $name, $order_id, $user_id) ? array_push($status, true) :  array_push($status, false);
           } else {
             //update sotre product
-            $this->updateProposalProductStore($product_id, $count, $price, $name, $order_id, $user_id) ? array_push($status, true) :  array_push($status, false);
+            $this->updateProposalProductStore($product_id, $count, $price, $name, $order_id,$user_id) ? array_push($status, true) :  array_push($status, false);
+
           }
         } else {
           //update proposal product
-          $this->updateProposalProductOrder($product_id, $count, $price, $name, $order_id, $user_id) ? array_push($status, true) :  array_push($status, false);
+          $this->updateProposalProductOrder($product_id, $count, $price, $name, $order_id, $user_id,$baseProductId) ? array_push($status, true) :  array_push($status, false);
           if ($sotreProduct == true) {
             //insert store product
             $this->saveProposalProductStore($product_id, $count, $price, $name, $order_id, $user_id) ? array_push($status, true) :  array_push($status, false);
           } else {
             //update store product
-            $this->updateProposalProductStore($product_id, $count, $price, $name, $order_id, $user_id) ? array_push($status, true) :  array_push($status, false);
+            $this->updateProposalProductStore($product_id, $count, $price, $name, $order_id,$user_id) ? array_push($status, true) :  array_push($status, false);
           }
         }
 
@@ -997,7 +999,6 @@
 
 
         //update customer vendor order to proposal
-        var_dump($status);
         if (array_search(false, $status)) {
           mysqli_rollback($this->conn);
           return false;
@@ -1014,25 +1015,28 @@
     /**
      * show result saveOrderOrderProposal
      */
-    public function showResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id, $object)
+    public function showResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id,$baseProductId, $object)
     {
-      if ($product_id && $count && $price && strlen($name) && $order_id && $user_id) {
+      $price = isset($price) ? $price : 1;
+      $count = isset($count) ? $count : 1;
+      
+      if ($product_id && $count && strlen($name) && $order_id && $user_id && $baseProductId) {
         //if product exist
         $storeProductExist = $this->productForStoreIsExist($product_id, $user_id) ? true : false;
-        $proposalProductExist = $this->productForProposalProductIsExist($product_id, $order_id) ? true : false;
+        $proposalProductExist = $this->productForProposalProductIsExist($baseProductId, $order_id) ? true : false;
 
         if ($storeProductExist == false && $proposalProductExist == false) {
-
           $this->saveOneProposalProduct($product_id, $count, $price, $name, $order_id, $user_id) ?  $object->response = 'ok' : $object->response = 'notok';
         } else if ($storeProductExist == false) {
-          $this->transactionProcess(!$proposalProductExist, !$storeProductExist, $product_id, $count, $price, $name, $order_id, $user_id)  ?  $object->response = 'ok' : $object->response = 'notok';
+          $this->transactionProcess(!$proposalProductExist, !$storeProductExist, $product_id, $count, $price, $name, $order_id,$baseProductId,$user_id)  ?  $object->response = 'ok' : $object->response = 'notok';
         } else if ($proposalProductExist == false) {
-          $this->transactionProcess(!$proposalProductExist, !$storeProductExist, $product_id, $count, $price, $name, $order_id, $user_id)  ?  $object->response = 'ok' : $object->response = 'notok';
+          $this->transactionProcess(!$proposalProductExist, !$storeProductExist, $product_id, $count, $price, $name, $order_id,$baseProductId,$user_id)  ?  $object->response = 'ok' : $object->response = 'notok';
         } else {
           //do any thing because both of them is true and this mean nothing to insert
           return $object->response = 'notok';
         }
       } else {
+        $object->error = 'data input error';
         $object->response = 'notok';
       }
     }
@@ -1269,8 +1273,8 @@
         $name = $post['name'];
         $order_id = $post['order_id'];
         $user_id = $post['user_id'];
-
-        $store->showResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id, $object);
+        $baseProductId = $post['baseProductId'];
+        $store->showResultSaveOneProposal($product_id, $count, $price, $name, $order_id, $user_id,$baseProductId ,$object);
       } else if ($typeAction == 'saveَAllProposal') {
         $product_id = $post['product_id'];
         $count = $post['count'];
@@ -1305,13 +1309,13 @@
   function jsonEncodeOutput($normalObject = null, $customeObject = null)
   {
     if (isset($normalObject)) {
-      // echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      // echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else if (isset($customeObject)) {
       echo json_encode([$customeObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     } else {
-      // echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-      echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      echo json_encode([$normalObject->response], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+      // echo json_encode([$normalObject], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     }
   }
 
